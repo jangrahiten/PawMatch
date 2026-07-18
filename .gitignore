@@ -1,0 +1,20 @@
+# Dependencies
+client/node_modules
+server/node_modules
+
+# Next.js
+client/.next
+
+# Logs
+*.log
+
+# Environment variables
+client/.env.local
+server/.env
+
+# Prisma
+server/prisma/dev.db
+
+# OS
+.DS_Store
+Thumbs.db
