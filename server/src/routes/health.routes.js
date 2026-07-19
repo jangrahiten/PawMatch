@@ -1,13 +1,19 @@
 import { Router } from "express";
+import prisma from "../config/prisma.js";
 
 const router = Router();
 
-router.get("/", (req, res) => {
-  res.status(200).json({
+router.get("/", async (req, res, next) => {
+  try{
+    await prisma.$queryRaw`SELECT 1`;
+    res.status(200).json({
     success: true,
-    message: "PawMatch API is healthy",
+    message: "PawMatch API and database are healthy",
     timestamp: new Date().toISOString(),
   });
+  } catch(error){
+    next(error);
+  }
 });
 
 export default router;
