@@ -4,13 +4,23 @@ server/node_modules
 
 # Next.js
 client/.next
+Client/out/
+
+# Environment variables
+client/.env*
+server/.env
+
+# Allow environment examples
+!client/.env.example
+!server/.env.example
 
 # Logs
 *.log
+npm-debug.log*
 
-# Environment variables
-client/.env.local
-server/.env
+
+# Prisma generated files
+server/generated/
 
 # Prisma
 server/prisma/dev.db
@@ -18,3 +28,7 @@ server/prisma/dev.db
 # OS
 .DS_Store
 Thumbs.db
+
+# Editor
+.vscode/
+.idea/

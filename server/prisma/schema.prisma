@@ -1,0 +1,132 @@
+generator client {
+  provider = "prisma-client"
+  output   = "../generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+enum UserRole {
+  ADOPTER
+  SHELTER
+  OWNER
+  ADMIN
+}
+
+enum AnimalType {
+  DOG
+  CAT
+  BIRD
+  RABBIT
+  OTHER
+}
+
+enum PetGender {
+  MALE
+  FEMALE
+  UNKNOWN
+}
+
+enum PetSize {
+  SMALL
+  MEDIUM
+  LARGE
+}
+
+enum PetStatus {
+  AVAILABLE
+  PENDING
+  ADOPTED
+  INACTIVE
+}
+
+model User {
+  id       String   @id @default(cuid())
+  name     String
+  email    String   @unique
+  password String
+  role     UserRole @default(ADOPTER)
+  avatar   String?
+  city     String?
+
+  adopterProfile AdopterProfile?
+  shelterProfile ShelterProfile?
+
+  pets Pet[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model AdopterProfile {
+  id            String  @id @default(cuid())
+  userId        String  @unique
+  bio           String?
+  housingType   String?
+  hasChildren   Boolean @default(false)
+  hasOtherPets  Boolean @default(false)
+  preferredPet  String?
+  preferredSize String?
+  preferredAge  String?
+  petExperience String?
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model ShelterProfile {
+  id          String  @id @default(cuid())
+  userId      String  @unique
+  shelterName String
+  description String?
+  address     String?
+  phone       String?
+  website     String?
+  isVerified  Boolean @default(false)
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Pet {
+  id               String     @id @default(cuid())
+  name             String
+  animalType       AnimalType
+  breed            String?
+  age              Int?
+  gender           PetGender?
+  size             PetSize?
+  description      String     @db.Text
+  city             String
+  vaccinated       Boolean    @default(false)
+  neutered         Boolean    @default(false)
+  goodWithChildren Boolean?
+  goodWithPets     Boolean?
+  status           PetStatus  @default(AVAILABLE)
+
+  ownerId String
+  owner   User   @relation(fields: [ownerId], references: [id], onDelete: Cascade)
+
+  images PetImage[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model PetImage {
+  id       String @id @default(cuid())
+  imageUrl String
+  position Int    @default(0)
+
+  petId String
+  pet   Pet    @relation(fields: [petId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now())
+
+  @@index([petId])
+}
