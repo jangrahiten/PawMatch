@@ -2,9 +2,10 @@ import express from 'express';
 import cors from 'cors';
 import helmet from 'helmet';
 import morgan from 'morgan';
+import cookieParser from 'cookie-parser';
 
-import healthRouter from './routes/health.routes.js';
-
+import healthRoutes from './routes/health.routes.js';
+import authRoutes from './routes/auth.route.js';
 const app = express();
 
 app.use(helmet());
@@ -15,6 +16,7 @@ app.use(
     })
 );
 
+app.use(cookieParser);
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(morgan("dev"));
@@ -28,7 +30,8 @@ app.get('/', (req, res) => {
     });
 });
 
-app.use('/api/health',healthRouter);
+app.use('/api/health',healthRoutes);
+app.use('/api/auth',authRoutes);
 
 app.use((req,res)=>{
     res.status(404).json({
