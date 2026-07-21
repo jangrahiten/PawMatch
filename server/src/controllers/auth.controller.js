@@ -33,7 +33,7 @@ export const register = async (req,res,next) => {
     }
 };
 
-export const login = async (res,req,next) => {
+export const login = async (req,res,next) => {
     try{
         const {email,password} = req.body;
 
