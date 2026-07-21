@@ -1,5 +1,6 @@
 import jwt from 'jsonwebtoken';
 
+
 export const generateToken = async (userid) => {
     if (!process.env.JWT_SECRET) throw new error("JWT_SECRET is not configured");
 
@@ -12,6 +13,12 @@ export const generateToken = async (userid) => {
     );
 };
 
+export const verifyToken = (token)=>{
+    if (!process.env.JWT_SECRET) throw new Error("JWT_SECRET is not configured");
+
+    return jwt.verify(token,process.env.JWT_SECRET);
+};
+
 export const setAuthCookie = (res,token) => {
     const isProduction = process.env.NODE_ENV === "production";
 
@@ -21,5 +28,16 @@ export const setAuthCookie = (res,token) => {
         sameSite: "lax",
         maxAge: 7*24*60*60*1000,
         path:'/',
+    });
+};
+
+export const clearAuthCookie = (res)=>{
+    const isProduction = process.env.NODE_ENV === "production";
+
+    res.clearCookie("token",{
+        httpOnly: true,
+        secure: isProduction,
+        sameSite: "lax",
+        package: "/",
     });
 };
