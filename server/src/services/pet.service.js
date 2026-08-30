@@ -1,3 +1,4 @@
+import cloudinary from "../config/cloudinary.js";
 import prisma from "../config/prisma.js";
 
 export const createPetListing = async (petData, ownerId) => {
@@ -185,4 +186,78 @@ export const deactivatePetListing = async (petId, ownerId) => {
       status: "INACTIVE",
     },
   });
+};
+
+const uploadBufferToCloudinary = (buffer) => {
+  return new Promise((resolve, reject) => {
+    const stream = cloudinary.uploader.upload_stream(
+      {
+        folder: "pawmatch/pets",
+        resource_type: "image",
+      },
+      (error, result) => {
+        if (error) {
+          return reject(error);
+        }
+
+        resolve(result);
+      }
+    );
+
+    stream.end(buffer);
+  });
+};
+
+export const uploadImagesForPet = async (petId,ownerId,files) => {
+  const pet = await prisma.pet.findUnique({
+    where: {
+      id: petId,
+    },
+  });
+
+  if (!pet) {
+    const error = new Error("Pet not found");
+    error.statusCode = 404;
+    throw error;
+  }
+
+  if (pet.ownerId !== ownerId) {
+    const error = new Error(
+      "You are not allowed to upload images for this pet"
+    );
+    error.statusCode = 403;
+    throw error;
+  }
+
+  if (!files || files.length === 0) {
+    const error = new Error("At least one image is required");
+    error.statusCode = 400;
+    throw error;
+  }
+
+  const uploadedImages = await Promise.all(
+    files.map((file) =>
+      uploadBufferToCloudinary(file.buffer)
+    )
+  );
+
+  const currentImageCount = await prisma.petImage.count({
+    where: {
+      petId,
+    },
+  });
+
+  const imageRecords = await Promise.all(
+    uploadedImages.map((image, index) =>
+      prisma.petImage.create({
+        data: {
+          imageUrl: image.secure_url,
+          position: currentImageCount + index,
+          petId,
+        },
+      })
+    )
+  );
+
+  return imageRecords;
 };
