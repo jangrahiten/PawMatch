@@ -1,4 +1,4 @@
-import { createPetListing } from "../services/pet.service.js";
+import { createPetListing, getAllPets, getPetById } from "../services/pet.service.js";
 
 export const createPet = async (req,res,next) => {
     try {
@@ -10,5 +10,40 @@ export const createPet = async (req,res,next) => {
         });
     } catch (error){
         next(error);
+    }
+};
+
+export const getPets = async (req, res, next) => {
+  try {
+    const result = await getAllPets(req.validated.query);
+
+    return res.status(200).json({
+      success: true,
+      page: result.page,
+      limit: result.limit,
+      total: result.total,
+      totalPages: result.totalPages,
+      pets: result.pets,
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+export const getPet = async (req,res,next)=>{
+    try {
+        const pet = await getPetById(req.params.id);
+        if (!pet) {
+            return res.status(404).json({
+                success: false,
+                message: "Pet not found",
+            });
+        }
+        return res.status(200).json({
+            success: true,
+            pet,
+        });
+    } catch (error) {
+        next (error);
     }
 };

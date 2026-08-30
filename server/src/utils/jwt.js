@@ -1,8 +1,8 @@
 import jwt from 'jsonwebtoken';
 
 
-export const generateToken = async (userId) => {
-    if (!process.env.JWT_SECRET) throw new error("JWT_SECRET is not configured");
+export const generateToken = (userId) => {
+    if (!process.env.JWT_SECRET) throw new Error("JWT_SECRET is not configured");
 
     return jwt.sign(
         {userId},
@@ -38,6 +38,6 @@ export const clearAuthCookie = (res)=>{
         httpOnly: true,
         secure: isProduction,
         sameSite: "lax",
-        package: "/",
+        path: "/",
     });
 };

@@ -2,6 +2,7 @@ import prisma from "../config/prisma.js";
 import { verifyToken } from "../utils/jwt.js";
 
 export const protect = async (req,res,next)=>{
+    
     try{
         const token = req.cookies?.token;
 
