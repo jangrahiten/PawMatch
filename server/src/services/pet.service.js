@@ -127,3 +127,62 @@ export const getPetById = async (petId)=>{
     },
   });
 };
+
+export const updatePetListing = async (petId, ownerId, data) => {
+  const pet = await prisma.pet.findUnique({
+    where: {
+      id: petId,
+    },
+  });
+
+  if (!pet) {
+    const error = new Error("Pet not found");
+    error.statusCode = 404;
+    throw error;
+  }
+
+  if (pet.ownerId !== ownerId) {
+    const error = new Error("You are not allowed to modify this pet");
+    error.statusCode = 403;
+    throw error;
+  }
+
+  return prisma.pet.update({
+    where: {
+      id: petId,
+    },
+    data,
+    include: {
+      images: true,
+    },
+  });
+};
+
+export const deactivatePetListing = async (petId, ownerId) => {
+  const pet = await prisma.pet.findUnique({
+    where: {
+      id: petId,
+    },
+  });
+
+  if (!pet) {
+    const error = new Error("Pet not found");
+    error.statusCode = 404;
+    throw error;
+  }
+
+  if (pet.ownerId !== ownerId) {
+    const error = new Error("You are not allowed to delete this pet");
+    error.statusCode = 403;
+    throw error;
+  }
+
+  return prisma.pet.update({
+    where: {
+      id: petId,
+    },
+    data: {
+      status: "INACTIVE",
+    },
+  });
+};
