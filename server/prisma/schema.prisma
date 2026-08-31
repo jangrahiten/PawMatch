@@ -121,6 +121,7 @@ model Pet {
 model PetImage {
   id       String @id @default(cuid())
   imageUrl String
+  publicId String
   position Int    @default(0)
 
   petId String

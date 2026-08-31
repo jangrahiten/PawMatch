@@ -96,3 +96,21 @@ export const uploadPetImagesController = async (req,res,next) => {
     next(error);
   }
 };
+
+export const deletePetImageController = async (req, res, next) => {
+  try {
+    const image = await deletePetImage(
+      req.params.petId,
+      req.params.imageId,
+      req.user.id
+    );
+
+    return res.status(200).json({
+      success: true,
+      message: "Pet image deleted successfully",
+      image,
+    });
+  } catch (error) {
+    next(error);
+  }
+};

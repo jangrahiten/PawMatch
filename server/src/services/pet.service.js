@@ -252,6 +252,7 @@ export const uploadImagesForPet = async (petId,ownerId,files) => {
       prisma.petImage.create({
         data: {
           imageUrl: image.secure_url,
+          publicId: image.public_id,
           position: currentImageCount + index,
           petId,
         },
@@ -260,4 +261,46 @@ export const uploadImagesForPet = async (petId,ownerId,files) => {
   );
 
   return imageRecords;
+};
+
+export const deletePetImage = async (petId, imageId, ownerId) => {
+  const pet = await prisma.pet.findUnique({
+    where: {
+      id: petId,
+    },
+  });
+
+  if (!pet) {
+    const error = new Error("Pet not found");
+    error.statusCode = 404;
+    throw error;
+  }
+
+  if (pet.ownerId !== ownerId) {
+    const error = new Error("You are not allowed to modify this pet");
+    error.statusCode = 403;
+    throw error;
+  }
+
+  const image = await prisma.petImage.findUnique({
+    where: {
+      id: imageId,
+    },
+  });
+
+  if (!image || image.petId !== petId) {
+    const error = new Error("Image not found for this pet");
+    error.statusCode = 404;
+    throw error;
+  }
+
+  await cloudinary.uploader.destroy(image.publicId);
+
+  await prisma.petImage.delete({
+    where: {
+      id: imageId,
+    },
+  });
+
+  return image;
 };
