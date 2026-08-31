@@ -8,6 +8,7 @@ import healthRoutes from './routes/health.routes.js';
 import authRoutes from './routes/auth.route.js';
 import petRoutes from "./routes/pet.routes.js";
 import likeRoutes from "./routes/like.routes.js";
+import adoptionRoutes from "./routes/adoption.routes.js";
 
 const app = express();
 
@@ -37,6 +38,8 @@ app.use('/api/health',healthRoutes);
 app.use('/api/auth',authRoutes);
 app.use('/api/pets',petRoutes);
 app.use("/api/likes", likeRoutes);
+app.use("/api/adoptions", adoptionRoutes);
+
 app.use((req,res)=>{
     res.status(404).json({
         success: false,
