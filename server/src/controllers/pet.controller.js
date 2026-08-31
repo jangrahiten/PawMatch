@@ -1,4 +1,4 @@
-import { createPetListing, deactivatePetListing, getAllPets, getPetById, updatePetListing, uploadImagesForPet } from "../services/pet.service.js";
+import { createPetListing, deactivatePetListing, deletePetImage, getAllPets, getPetById, updatePetListing, uploadImagesForPet } from "../services/pet.service.js";
 
 export const createPet = async (req,res,next) => {
     try {

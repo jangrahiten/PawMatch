@@ -7,6 +7,7 @@ import cookieParser from 'cookie-parser';
 import healthRoutes from './routes/health.routes.js';
 import authRoutes from './routes/auth.route.js';
 import petRoutes from "./routes/pet.routes.js";
+import likeRoutes from "./routes/like.routes.js";
 
 const app = express();
 
@@ -35,7 +36,7 @@ app.get('/', (req, res) => {
 app.use('/api/health',healthRoutes);
 app.use('/api/auth',authRoutes);
 app.use('/api/pets',petRoutes);
-
+app.use("/api/likes", likeRoutes);
 app.use((req,res)=>{
     res.status(404).json({
         success: false,
@@ -52,4 +53,4 @@ app.use((error,req,res,next)=>{
     });
 });
 
-export default app;
+export default app; 

@@ -53,7 +53,8 @@ model User {
   adopterProfile AdopterProfile?
   shelterProfile ShelterProfile?
 
-  pets Pet[]
+  pets  Pet[]
+  likes Like[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -112,6 +113,7 @@ model Pet {
   ownerId String
   owner   User   @relation(fields: [ownerId], references: [id], onDelete: Cascade)
 
+  likes  Like[]
   images PetImage[]
 
   createdAt DateTime @default(now())
@@ -129,5 +131,21 @@ model PetImage {
 
   createdAt DateTime @default(now())
 
+  @@index([petId])
+}
+
+model Like {
+  id String @id @default(cuid())
+
+  userId String
+  petId  String
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  pet  Pet  @relation(fields: [petId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now())
+
+  @@unique([userId, petId])
+  @@index([userId])
   @@index([petId])
 }
