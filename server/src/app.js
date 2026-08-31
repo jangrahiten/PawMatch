@@ -9,6 +9,7 @@ import authRoutes from './routes/auth.route.js';
 import petRoutes from "./routes/pet.routes.js";
 import likeRoutes from "./routes/like.routes.js";
 import adoptionRoutes from "./routes/adoption.routes.js";
+import conversationRoutes from "./routes/conversation.routes.js";
 
 const app = express();
 
@@ -39,6 +40,7 @@ app.use('/api/auth',authRoutes);
 app.use('/api/pets',petRoutes);
 app.use("/api/likes", likeRoutes);
 app.use("/api/adoptions", adoptionRoutes);
+app.use("/api/conversations",conversationRoutes);
 
 app.use((req,res)=>{
     res.status(404).json({
