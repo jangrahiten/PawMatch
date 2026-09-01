@@ -157,7 +157,7 @@ export default function PetDetailPage() {
               <img
                 src={pet.images[0].imageUrl}
                 alt={pet.name}
-                className="w-full h-[500px] object-cover rounded-2xl"
+                className="w-full h-125 object-cover rounded-2xl"
               />
 
               {pet.images.length > 1 && (
@@ -174,7 +174,7 @@ export default function PetDetailPage() {
               )}
             </div>
           ) : (
-            <div className="h-[500px] bg-gray-100 rounded-2xl flex items-center justify-center text-gray-400">
+            <div className="h-125 bg-gray-100 rounded-2xl flex items-center justify-center text-gray-400">
               No image available
             </div>
           )}

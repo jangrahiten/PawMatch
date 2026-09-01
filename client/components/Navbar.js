@@ -35,6 +35,12 @@ export default function Navbar() {
             </Link>
         )}
 
+        {["SHELTER", "OWNER"].includes(user?.role) && (
+            <Link href="/dashboard/shelter">
+                Dashboard
+            </Link>
+        )}
+
         {!loading && user && (
           <>
             <span className="text-sm">
