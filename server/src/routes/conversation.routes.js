@@ -10,35 +10,16 @@ import {
 import { protect } from "../middlewares/auth.middleware.js";
 import { validate } from "../middlewares/validate.middleware.js";
 
-import {
-  sendMessageSchema,
-} from "../validators/message.validator.js";
+import {getMessagesQuerySchema,sendMessageSchema} from "../validators/message.validator.js";
 
 const router = Router();
 
-router.get(
-  "/",
-  protect,
-  getConversations
-);
+router.get("/",protect,getConversations);
 
-router.post(
-  "/request/:requestId",
-  protect,
-  createConversation
-);
+router.post("/request/:requestId",protect,createConversation);
 
-router.get(
-  "/:conversationId/messages",
-  protect,
-  getMessages
-);
+router.get("/:conversationId/messages",protect,validate(getMessagesQuerySchema, "query"),getMessages);
 
-router.post(
-  "/:conversationId/messages",
-  protect,
-  validate(sendMessageSchema),
-  createMessage
-);
+router.post("/:conversationId/messages",protect,validate(sendMessageSchema),createMessage);
 
 export default router;

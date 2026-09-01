@@ -45,22 +45,17 @@ export const getConversations = async (
   }
 };
 
-export const getMessages = async (
-  req,
-  res,
-  next
-) => {
+export const getMessages = async (req, res, next) => {
   try {
-    const messages =
-      await getConversationMessages(
-        req.params.conversationId,
-        req.user.id
-      );
+    const result = await getConversationMessages(
+      req.params.conversationId,
+      req.user.id,
+      req.validated.query
+    );
 
     return res.status(200).json({
       success: true,
-      count: messages.length,
-      messages,
+      ...result,
     });
   } catch (error) {
     next(error);

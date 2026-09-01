@@ -185,30 +185,48 @@ export const getMyConversations = async (userId) => {
 
 export const getConversationMessages = async (
   conversationId,
-  userId
+  userId,
+  { page, limit }
 ) => {
-  await getConversationForUser(
-    conversationId,
-    userId
-  );
+  await getConversationForUser(conversationId, userId);
 
-  return prisma.message.findMany({
-    where: {
-      conversationId,
-    },
-    include: {
-      sender: {
-        select: {
-          id: true,
-          name: true,
-          avatar: true,
+  const skip = (page - 1) * limit;
+
+  const [messages, total] = await Promise.all([
+    prisma.message.findMany({
+      where: {
+        conversationId,
+      },
+      include: {
+        sender: {
+          select: {
+            id: true,
+            name: true,
+            avatar: true,
+          },
         },
       },
-    },
-    orderBy: {
-      createdAt: "asc",
-    },
-  });
+      orderBy: {
+        createdAt: "desc",
+      },
+      skip,
+      take: limit,
+    }),
+
+    prisma.message.count({
+      where: {
+        conversationId,
+      },
+    }),
+  ]);
+
+  return {
+    messages,
+    page,
+    limit,
+    total,
+    totalPages: Math.ceil(total / limit),
+  };
 };
 
 export const sendMessage = async (
