@@ -81,12 +81,21 @@ export default function ShelterDashboardPage() {
 
    return (
       <main className="max-w-7xl mx-auto p-6 space-y-10">
-         <div>
-            <h1 className="text-3xl font-bold">{user.name}</h1>
+         <div className="flex items-start justify-between gap-4">
+            <div>
+               <h1 className="text-3xl font-bold">Welcome, {user.name}</h1>
 
-            <p className="text-gray-600 mt-1">
-               Manage your pet listings and adoption requests.
-            </p>
+               <p className="text-gray-600 mt-1">
+                  Manage your pet listings and adoption requests.
+               </p>
+            </div>
+
+            <Link
+               href="/dashboard/shelter/profile"
+               className="shrink-0 px-4 py-2 border rounded-lg hover:bg-gray-50 transition"
+            >
+               Edit Profile
+            </Link>
          </div>
 
          {error && <p className="text-red-500">{error}</p>}
