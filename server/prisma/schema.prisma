@@ -195,7 +195,7 @@ model Conversation {
 
 model Message {
   id String @id @default(cuid())
-
+  isRead    Boolean @default(false)
   conversationId String
   senderId       String
   content        String @db.Text

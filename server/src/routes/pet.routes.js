@@ -1,6 +1,6 @@
 import { Router } from "express";
 
-import { createPet, deletePet, deletePetImageController, getPet, getPets, updatePet, uploadPetImagesController } from "../controllers/pet.controller.js";
+import { createPet, deletePet, deletePetImageController, getMyPetListings, getPet, getPets, updatePet, uploadPetImagesController } from "../controllers/pet.controller.js";
 import { protect } from "../middlewares/auth.middleware.js";
 import { allowRoles } from "../middlewares/role.middleware.js";
 import { validate } from "../middlewares/validate.middleware.js";
@@ -10,6 +10,7 @@ import { uploadPetImages } from "../middlewares/upload.middleware.js";
 const router = Router();
 
 router.get("/", validate(getPetsQuerySchema, "query"), getPets);
+router.get("/mine",protect,allowRoles("SHELTER","OWNER"),getMyPetListings)
 router.get("/:id", getPet);
 router.post("/",protect,allowRoles("SHELTER","OWNER"), validate(createPetSchema),createPet);
 router.patch("/:id", protect, allowRoles("SHELTER","OWNER"),validate(updatePetSchema),updatePet);

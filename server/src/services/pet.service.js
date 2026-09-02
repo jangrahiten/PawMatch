@@ -304,3 +304,21 @@ export const deletePetImage = async (petId, imageId, ownerId) => {
 
   return image;
 };
+
+export const getMyPets = async (ownerId) => {
+  return prisma.pet.findMany({
+    where: {
+      ownerId,
+    },
+    include: {
+      images: {
+        orderBy: {
+          position: "asc",
+        },
+      },
+    },
+    orderBy: {
+      createdAt: "desc",
+    },
+  });
+};

@@ -2,6 +2,7 @@ import {
   createConversationForRequest,
   getConversationMessages,
   getMyConversations,
+  markConversationAsReadService,
   sendMessage,
 } from "../services/conversation.service.js";
 
@@ -77,6 +78,25 @@ export const createMessage = async (
     return res.status(201).json({
       success: true,
       message,
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+export const markConversationAsRead = async (req, res, next) => {
+  try {
+    const { conversationId } = req.params;
+    const userId = req.user.id;
+
+    await markConversationAsReadService(
+      conversationId,
+      userId
+    );
+
+    return res.status(200).json({
+      success: true,
+      message: "Messages marked as read",
     });
   } catch (error) {
     next(error);

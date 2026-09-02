@@ -1,258 +1,294 @@
 import prisma from "../config/prisma.js";
 
-const getConversationForUser = async (
-  conversationId,
-  userId
-) => {
-  const conversation =
-    await prisma.conversation.findUnique({
+const getConversationForUser = async (conversationId, userId) => {
+   const conversation = await prisma.conversation.findUnique({
       where: {
-        id: conversationId,
+         id: conversationId,
       },
       include: {
-        adoptionRequest: {
-          include: {
-            adopter: {
-              select: {
-                id: true,
-                name: true,
-                avatar: true,
-              },
-            },
-            pet: {
-              include: {
-                owner: {
+         adoptionRequest: {
+            include: {
+               adopter: {
                   select: {
-                    id: true,
-                    name: true,
-                    avatar: true,
+                     id: true,
+                     name: true,
+                     avatar: true,
                   },
-                },
-                images: true,
-              },
+               },
+               pet: {
+                  include: {
+                     owner: {
+                        select: {
+                           id: true,
+                           name: true,
+                           avatar: true,
+                        },
+                     },
+                     images: true,
+                  },
+               },
             },
-          },
-        },
+         },
       },
-    });
+   });
 
-  if (!conversation) {
-    const error = new Error("Conversation not found");
-    error.statusCode = 404;
-    throw error;
-  }
+   if (!conversation) {
+      const error = new Error("Conversation not found");
+      error.statusCode = 404;
+      throw error;
+   }
 
-  const adopterId =
-    conversation.adoptionRequest.adopterId;
+   const adopterId = conversation.adoptionRequest.adopterId;
 
-  const ownerId =
-    conversation.adoptionRequest.pet.ownerId;
+   const ownerId = conversation.adoptionRequest.pet.ownerId;
 
-  if (
-    userId !== adopterId &&
-    userId !== ownerId
-  ) {
-    const error = new Error(
-      "You are not allowed to access this conversation"
-    );
-    error.statusCode = 403;
-    throw error;
-  }
+   if (userId !== adopterId && userId !== ownerId) {
+      const error = new Error(
+         "You are not allowed to access this conversation",
+      );
+      error.statusCode = 403;
+      throw error;
+   }
 
-  return conversation;
+   return conversation;
 };
 
 export const createConversationForRequest = async (
-  adoptionRequestId,
-  userId
+   adoptionRequestId,
+   userId,
 ) => {
-  const request =
-    await prisma.adoptionRequest.findUnique({
+   const request = await prisma.adoptionRequest.findUnique({
       where: {
-        id: adoptionRequestId,
+         id: adoptionRequestId,
       },
       include: {
-        pet: true,
+         pet: true,
       },
-    });
+   });
 
-  if (!request) {
-    const error = new Error(
-      "Adoption request not found"
-    );
-    error.statusCode = 404;
-    throw error;
-  }
+   if (!request) {
+      const error = new Error("Adoption request not found");
+      error.statusCode = 404;
+      throw error;
+   }
 
-  if (request.status !== "ACCEPTED") {
-    const error = new Error(
-      "Conversation is only available after the adoption request is accepted"
-    );
-    error.statusCode = 409;
-    throw error;
-  }
+   if (request.status !== "ACCEPTED") {
+      const error = new Error(
+         "Conversation is only available after the adoption request is accepted",
+      );
+      error.statusCode = 409;
+      throw error;
+   }
 
-  const ownerId = request.pet.ownerId;
+   const ownerId = request.pet.ownerId;
 
-  if (
-    userId !== request.adopterId &&
-    userId !== ownerId
-  ) {
-    const error = new Error(
-      "You are not allowed to create this conversation"
-    );
-    error.statusCode = 403;
-    throw error;
-  }
+   if (userId !== request.adopterId && userId !== ownerId) {
+      const error = new Error(
+         "You are not allowed to create this conversation",
+      );
+      error.statusCode = 403;
+      throw error;
+   }
 
-  const existing =
-    await prisma.conversation.findUnique({
+   const existing = await prisma.conversation.findUnique({
       where: {
-        adoptionRequestId,
+         adoptionRequestId,
       },
-    });
+   });
 
-  if (existing) {
-    return existing;
-  }
+   if (existing) {
+      return existing;
+   }
 
-  return prisma.conversation.create({
-    data: {
-      adoptionRequestId,
-    },
-  });
+   return prisma.conversation.create({
+      data: {
+         adoptionRequestId,
+      },
+   });
 };
 
 export const getMyConversations = async (userId) => {
-  return prisma.conversation.findMany({
-    where: {
-      OR: [
-        {
-          adoptionRequest: {
-            adopterId: userId,
-          },
-        },
-        {
-          adoptionRequest: {
-            pet: {
-              ownerId: userId,
+   return prisma.conversation.findMany({
+      where: {
+         OR: [
+            {
+               adoptionRequest: {
+                  adopterId: userId,
+               },
             },
-          },
-        },
-      ],
-    },
-    include: {
-      adoptionRequest: {
-        include: {
-          adopter: {
-            select: {
-              id: true,
-              name: true,
-              avatar: true,
+            {
+               adoptionRequest: {
+                  pet: {
+                     ownerId: userId,
+                  },
+               },
             },
-          },
-          pet: {
+         ],
+      },
+      include: {
+         adoptionRequest: {
             include: {
-              images: {
-                orderBy: {
-                  position: "asc",
-                },
-                take: 1,
-              },
-              owner: {
-                select: {
-                  id: true,
-                  name: true,
-                  avatar: true,
-                },
-              },
+               adopter: {
+                  select: {
+                     id: true,
+                     name: true,
+                     avatar: true,
+                  },
+               },
+               pet: {
+                  include: {
+                     images: {
+                        orderBy: {
+                           position: "asc",
+                        },
+                        take: 1,
+                     },
+                     owner: {
+                        select: {
+                           id: true,
+                           name: true,
+                           avatar: true,
+                        },
+                     },
+                  },
+               },
             },
-          },
-        },
+         },
+
+         messages: {
+            orderBy: {
+               createdAt: "desc",
+            },
+            take: 1,
+         },
+
+         _count: {
+            select: {
+               messages: {
+                  where: {
+                     senderId: {
+                        not: userId,
+                     },
+                     isRead: false,
+                  },
+               },
+            },
+         },
       },
-      messages: {
-        orderBy: {
-          createdAt: "desc",
-        },
-        take: 1,
+      orderBy: {
+         updatedAt: "desc",
       },
-    },
-    orderBy: {
-      updatedAt: "desc",
-    },
-  });
+   });
 };
 
 export const getConversationMessages = async (
-  conversationId,
-  userId,
-  { page, limit }
+   conversationId,
+   userId,
+   { page, limit },
 ) => {
-  await getConversationForUser(conversationId, userId);
+   await getConversationForUser(conversationId, userId);
 
-  const skip = (page - 1) * limit;
+   const skip = (page - 1) * limit;
 
-  const [messages, total] = await Promise.all([
-    prisma.message.findMany({
-      where: {
-        conversationId,
-      },
-      include: {
-        sender: {
-          select: {
-            id: true,
-            name: true,
-            avatar: true,
-          },
-        },
-      },
-      orderBy: {
-        createdAt: "desc",
-      },
-      skip,
-      take: limit,
-    }),
+   const [messages, total] = await Promise.all([
+      prisma.message.findMany({
+         where: {
+            conversationId,
+         },
+         include: {
+            sender: {
+               select: {
+                  id: true,
+                  name: true,
+                  avatar: true,
+               },
+            },
+         },
+         orderBy: {
+            createdAt: "desc",
+         },
+         skip,
+         take: limit,
+      }),
 
-    prisma.message.count({
-      where: {
-        conversationId,
-      },
-    }),
-  ]);
+      prisma.message.count({
+         where: {
+            conversationId,
+         },
+      }),
+   ]);
 
-  return {
-    messages,
-    page,
-    limit,
-    total,
-    totalPages: Math.ceil(total / limit),
-  };
+   return {
+      messages,
+      page,
+      limit,
+      total,
+      totalPages: Math.ceil(total / limit),
+   };
 };
 
-export const sendMessage = async (
-  conversationId,
-  senderId,
-  content
-) => {
-  await getConversationForUser(
-    conversationId,
-    senderId
-  );
+export const sendMessage = async (conversationId, senderId, content) => {
+   await getConversationForUser(conversationId, senderId);
 
-  return prisma.message.create({
-    data: {
-      conversationId,
-      senderId,
-      content,
-    },
-    include: {
-      sender: {
-        select: {
-          id: true,
-          name: true,
-          avatar: true,
-        },
+   return prisma.message.create({
+      data: {
+         conversationId,
+         senderId,
+         content,
       },
-    },
-  });
+      include: {
+         sender: {
+            select: {
+               id: true,
+               name: true,
+               avatar: true,
+            },
+         },
+      },
+   });
+};
+
+export const markConversationAsReadService = async (conversationId, userId) => {
+   const conversation = await prisma.conversation.findUnique({
+      where: {
+         id: conversationId,
+      },
+      include: {
+         adoptionRequest: {
+            include: {
+               pet: true,
+            },
+         },
+      },
+   });
+
+   if (!conversation) {
+      const error = new Error("Conversation not found");
+      error.statusCode = 404;
+      throw error;
+   }
+
+   const adopterId = conversation.adoptionRequest.adopterId;
+   const ownerId = conversation.adoptionRequest.pet.ownerId;
+
+   if (userId !== adopterId && userId !== ownerId) {
+      const error = new Error(
+         "You are not allowed to access this conversation",
+      );
+      error.statusCode = 403;
+      throw error;
+   }
+
+   await prisma.message.updateMany({
+      where: {
+         conversationId,
+         senderId: {
+            not: userId,
+         },
+         isRead: false,
+      },
+      data: {
+         isRead: true,
+      },
+   });
 };

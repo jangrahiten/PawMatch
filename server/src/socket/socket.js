@@ -12,7 +12,7 @@ export const initializeSocket = (io) => {
         return next(new Error("Authentication required"));
       }
 
-      const cookies = cookie.parse(rawCookie);
+      const cookies = cookie.parseCookie(rawCookie);
       const token = cookies.token;
 
       if (!token) {
@@ -44,7 +44,8 @@ export const initializeSocket = (io) => {
 
       next();
     } catch (error) {
-      next(new Error("Invalid or expired authentication token"));
+      console.error("SOCKET AUTH ERROR:",error);
+      next(new Error(error.message));
     }
   });
 
@@ -52,6 +53,14 @@ export const initializeSocket = (io) => {
     console.log(
       `Socket connected: ${socket.id} - ${socket.user.name}`
     );
+    
+    socket.on("mark-conversation-read",
+      ({conversationId})=>{
+        io.emit("conversation-read-update",{
+          conversationId,
+          userId: socket.user.id,
+        });
+      });
 
     socket.on("join-conversation", async (conversationId) => {
       try {
@@ -167,6 +176,19 @@ export const initializeSocket = (io) => {
         });
 
         io.to(conversationId).emit("new-message", message);
+        
+        const receiverId = socket.user.id === adopterId ? ownerId : adopterId;
+
+        io.emit("conversation-unread-update", {
+          conversationId,
+          receiverId,
+        });
+
+        io.emit("conversation-preview-update", {
+          conversationId,
+          message,
+        });
+
     } catch (error) {
         console.error(error);
 

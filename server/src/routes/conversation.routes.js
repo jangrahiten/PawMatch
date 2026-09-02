@@ -5,6 +5,7 @@ import {
   createMessage,
   getConversations,
   getMessages,
+  markConversationAsRead,
 } from "../controllers/conversation.controller.js";
 
 import { protect } from "../middlewares/auth.middleware.js";
@@ -16,10 +17,12 @@ const router = Router();
 
 router.get("/",protect,getConversations);
 
-router.post("/request/:requestId",protect,createConversation);
-
 router.get("/:conversationId/messages",protect,validate(getMessagesQuerySchema, "query"),getMessages);
 
+router.post("/request/:requestId",protect,createConversation);
+
 router.post("/:conversationId/messages",protect,validate(sendMessageSchema),createMessage);
+
+router.patch("/:conversationId/read",protect,markConversationAsRead)
 
 export default router;

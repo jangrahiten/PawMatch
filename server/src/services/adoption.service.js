@@ -141,29 +141,39 @@ export const updateAdoptionRequestStatus = async (
   }
 
   if (status === "ACCEPTED") {
-    return prisma.$transaction(async (tx) => {
-      const updatedRequest =
-        await tx.adoptionRequest.update({
-          where: {
-            id: requestId,
-          },
-          data: {
-            status: "ACCEPTED",
-          },
-        });
-
-      await tx.pet.update({
+  return prisma.$transaction(async (tx) => {
+    const updatedRequest =
+      await tx.adoptionRequest.update({
         where: {
-          id: request.petId,
+          id: requestId,
         },
         data: {
-          status: "PENDING",
+          status: "ACCEPTED",
         },
       });
 
-      return updatedRequest;
+    await tx.pet.update({
+      where: {
+        id: request.petId,
+      },
+      data: {
+        status: "PENDING",
+      },
     });
-  }
+
+    await tx.conversation.upsert({
+      where: {
+        adoptionRequestId: requestId,
+      },
+      update: {},
+      create: {
+        adoptionRequestId: requestId,
+      },
+    });
+
+    return updatedRequest;
+  });
+}
 
   return prisma.adoptionRequest.update({
     where: {

@@ -1,4 +1,4 @@
-import { createPetListing, deactivatePetListing, deletePetImage, getAllPets, getPetById, updatePetListing, uploadImagesForPet } from "../services/pet.service.js";
+import { createPetListing, deactivatePetListing, deletePetImage, getAllPets, getMyPets, getPetById, updatePetListing, uploadImagesForPet } from "../services/pet.service.js";
 
 export const createPet = async (req,res,next) => {
     try {
@@ -109,6 +109,20 @@ export const deletePetImageController = async (req, res, next) => {
       success: true,
       message: "Pet image deleted successfully",
       image,
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+export const getMyPetListings = async (req, res, next) => {
+  try {
+    const pets = await getMyPets(req.user.id);
+
+    return res.status(200).json({
+      success: true,
+      count: pets.length,
+      pets,
     });
   } catch (error) {
     next(error);
