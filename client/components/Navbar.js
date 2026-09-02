@@ -41,6 +41,14 @@ export default function Navbar() {
             </Link>
         )}
 
+        {
+          user && (
+            <Link href="/messages">
+              Messages
+            </Link>
+          )
+        }
+
         {!loading && user && (
           <>
             <span className="text-sm">
