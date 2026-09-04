@@ -141,39 +141,52 @@ export const updateAdoptionRequestStatus = async (
   }
 
   if (status === "ACCEPTED") {
-  return prisma.$transaction(async (tx) => {
-    const updatedRequest =
-      await tx.adoptionRequest.update({
+    return prisma.$transaction(async (tx) => {
+      const updatedRequest =
+        await tx.adoptionRequest.update({
+          where: {
+            id: requestId,
+          },
+          data: {
+            status: "ACCEPTED",
+          },
+        });
+
+      await tx.adoptionRequest.updateMany({
         where: {
-          id: requestId,
+          petId: request.petId,
+          id: {
+            not: requestId,
+          },
+          status: "PENDING",
         },
         data: {
-          status: "ACCEPTED",
+          status: "REJECTED",
         },
       });
 
-    await tx.pet.update({
-      where: {
-        id: request.petId,
-      },
-      data: {
-        status: "PENDING",
-      },
-    });
+      await tx.pet.update({
+        where: {
+          id: request.petId,
+        },
+        data: {
+          status: "PENDING",
+        },
+      });
 
-    await tx.conversation.upsert({
-      where: {
-        adoptionRequestId: requestId,
-      },
-      update: {},
-      create: {
-        adoptionRequestId: requestId,
-      },
-    });
+      await tx.conversation.upsert({
+        where: {
+          adoptionRequestId: requestId,
+        },
+        update: {},
+        create: {
+          adoptionRequestId: requestId,
+        },
+      });
 
-    return updatedRequest;
-  });
-}
+      return updatedRequest;
+    });
+  }
 
   return prisma.adoptionRequest.update({
     where: {
@@ -181,6 +194,129 @@ export const updateAdoptionRequestStatus = async (
     },
     data: {
       status: "REJECTED",
+    },
+  });
+};
+
+export const completeAdoption = async (
+  requestId,
+  ownerId
+) => {
+  const request =
+    await prisma.adoptionRequest.findUnique({
+      where: {
+        id: requestId,
+      },
+      include: {
+        pet: true,
+      },
+    });
+
+  if (!request) {
+    const error = new Error(
+      "Adoption request not found"
+    );
+    error.statusCode = 404;
+    throw error;
+  }
+
+  if (request.pet.ownerId !== ownerId) {
+    const error = new Error(
+      "You are not allowed to complete this adoption"
+    );
+    error.statusCode = 403;
+    throw error;
+  }
+
+  if (request.status !== "ACCEPTED") {
+    const error = new Error(
+      "Only an accepted adoption request can be completed"
+    );
+    error.statusCode = 409;
+    throw error;
+  }
+
+  if (request.pet.status === "ADOPTED") {
+    const error = new Error(
+      "This pet has already been adopted"
+    );
+    error.statusCode = 409;
+    throw error;
+  }
+
+  return prisma.$transaction(async (tx) => {
+    await tx.pet.update({
+      where: {
+        id: request.petId,
+      },
+      data: {
+        status: "ADOPTED",
+      },
+    });
+
+    return tx.adoptionRequest.findUnique({
+      where: {
+        id: requestId,
+      },
+      include: {
+        pet: {
+          include: {
+            images: true,
+          },
+        },
+        adopter: {
+          select: {
+            id: true,
+            name: true,
+            email: true,
+          },
+        },
+      },
+    });
+  });
+};
+
+export const cancelAdoptionRequest = async (
+  requestId,
+  adopterId
+) => {
+  const request =
+    await prisma.adoptionRequest.findUnique({
+      where: {
+        id: requestId,
+      },
+    });
+
+  if (!request) {
+    const error = new Error(
+      "Adoption request not found"
+    );
+    error.statusCode = 404;
+    throw error;
+  }
+
+  if (request.adopterId !== adopterId) {
+    const error = new Error(
+      "You are not allowed to cancel this adoption request"
+    );
+    error.statusCode = 403;
+    throw error;
+  }
+
+  if (request.status !== "PENDING") {
+    const error = new Error(
+      "Only pending adoption requests can be cancelled"
+    );
+    error.statusCode = 409;
+    throw error;
+  }
+
+  return prisma.adoptionRequest.update({
+    where: {
+      id: requestId,
+    },
+    data: {
+      status: "CANCELLED",
     },
   });
 };

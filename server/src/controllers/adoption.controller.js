@@ -1,4 +1,6 @@
 import {
+  cancelAdoptionRequest,
+  completeAdoption,
   createAdoptionRequest,
   getMyAdoptionRequests,
   getReceivedAdoptionRequests,
@@ -73,6 +75,52 @@ export const updateRequestStatus = async (
     return res.status(200).json({
       success: true,
       message: `Adoption request ${req.body.status.toLowerCase()}`,
+      request,
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+export const completeAdoptionRequest = async (
+  req,
+  res,
+  next
+) => {
+  try {
+    const { requestId } = req.params;
+
+    const result = await completeAdoption(
+      requestId,
+      req.user.id
+    );
+
+    return res.status(200).json({
+      success: true,
+      message: "Adoption completed successfully",
+      request: result,
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+export const cancelRequest = async (
+  req,
+  res,
+  next
+) => {
+  try {
+    const { requestId } = req.params;
+
+    const request = await cancelAdoptionRequest(
+      requestId,
+      req.user.id
+    );
+
+    return res.status(200).json({
+      success: true,
+      message: "Adoption request cancelled successfully",
       request,
     });
   } catch (error) {
