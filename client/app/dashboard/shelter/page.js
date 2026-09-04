@@ -5,6 +5,10 @@ import Link from "next/link";
 
 import api from "../../../lib/api";
 import { useAuth } from "@/context/AuthContext";
+import { toast } from "react-toastify";
+import ConfirmModal from "@/components/ConfirmModal";
+import LoadingSpinner from "@/components/LoadingSpinner";
+import EmptyState from "@/components/EmptyState";
 
 export default function ShelterDashboardPage() {
    const { user, loading: authLoading } = useAuth();
@@ -13,6 +17,8 @@ export default function ShelterDashboardPage() {
    const [requests, setRequests] = useState([]);
    const [loading, setLoading] = useState(true);
    const [error, setError] = useState("");
+   const [requestToComplete, setRequestToComplete] = useState(null);
+   const [completeLoading, setCompleteLoading] = useState(false);
 
    useEffect(() => {
       const fetchDashboard = async () => {
@@ -51,24 +57,89 @@ export default function ShelterDashboardPage() {
 
    const handleRequestStatus = async (requestId, status) => {
       try {
-         await api.patch(`/adoptions/${requestId}/status`, { status });
+         await api.patch(`/adoptions/${requestId}/status`, {
+            status,
+         });
 
          setRequests((current) =>
             current.map((request) =>
-               request.id === requestId ? { ...request, status } : request,
+               request.id === requestId
+                  ? {
+                       ...request,
+                       status,
+                       pet:
+                          status === "ACCEPTED"
+                             ? {
+                                  ...request.pet,
+                                  status: "PENDING",
+                               }
+                             : request.pet,
+                    }
+                  : request,
             ),
          );
+
+         toast.success(
+            status === "ACCEPTED"
+               ? "Adoption request accepted"
+               : "Adoption request rejected",
+         );
       } catch (error) {
-         alert(error.response?.data?.message || "Unable to update request");
+         toast.error(
+            error.response?.data?.message || "Unable to update request",
+         );
+      }
+   };
+
+   const handleCompleteAdoption = async () => {
+      if (!requestToComplete) return;
+
+      try {
+         setCompleteLoading(true);
+
+         const response = await api.patch(
+            `/adoptions/${requestToComplete}/complete`,
+         );
+
+         setRequests((current) =>
+            current.map((request) =>
+               request.id === requestToComplete
+                  ? {
+                       ...request,
+                       pet: {
+                          ...request.pet,
+                          status: "ADOPTED",
+                       },
+                    }
+                  : request,
+            ),
+         );
+
+         setPets((current) =>
+            current.map((pet) =>
+               pet.id === response.data.request.pet.id
+                  ? {
+                       ...pet,
+                       status: "ADOPTED",
+                    }
+                  : pet,
+            ),
+         );
+
+         toast.success("Adoption marked as completed");
+
+         setRequestToComplete(null);
+      } catch (error) {
+         toast.error(
+            error.response?.data?.message || "Unable to complete adoption",
+         );
+      } finally {
+         setCompleteLoading(false);
       }
    };
 
    if (authLoading || loading) {
-      return (
-         <main className="p-8">
-            <p>Loading dashboard...</p>
-         </main>
-      );
+      return <LoadingSpinner text="Loading shelter dashboard..." />;
    }
 
    if (!user || !["SHELTER", "OWNER"].includes(user.role)) {
@@ -113,9 +184,18 @@ export default function ShelterDashboardPage() {
             </div>
 
             {pets.length === 0 ? (
-               <p className="text-gray-500">
-                  You don't have any active listings.
-               </p>
+               <EmptyState
+                  title="No pets listed yet"
+                  description="Create your first pet listing so adopters can discover it."
+                  action={
+                     <Link
+                        href="/dashboard/shelter/pets/new"
+                        className="inline-block rounded-lg bg-black px-4 py-2 text-white"
+                     >
+                        Add a Pet
+                     </Link>
+                  }
+               />
             ) : (
                <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
                   {pets.map((pet) => (
@@ -182,7 +262,10 @@ export default function ShelterDashboardPage() {
             <h2 className="text-2xl font-semibold mb-5">Adoption Requests</h2>
 
             {requests.length === 0 ? (
-               <p className="text-gray-500">No adoption requests yet.</p>
+               <EmptyState
+                  title="No adoption requests yet"
+                  description="Requests from interested adopters will appear here."
+               />
             ) : (
                <div className="space-y-4">
                   {requests.map((request) => (
@@ -230,11 +313,44 @@ export default function ShelterDashboardPage() {
                               </button>
                            </div>
                         )}
+
+                        {request.status === "ACCEPTED" &&
+                           request.pet.status !== "ADOPTED" && (
+                              <div className="mt-5">
+                                 <button
+                                    onClick={() =>
+                                       setRequestToComplete(request.id)
+                                    }
+                                    className="bg-black text-white px-4 py-2 rounded-lg"
+                                 >
+                                    Mark as Adopted
+                                 </button>
+                              </div>
+                           )}
+
+                        {request.pet.status === "ADOPTED" && (
+                           <p className="mt-5 text-sm font-medium">
+                              Adoption completed
+                           </p>
+                        )}
                      </div>
                   ))}
                </div>
             )}
          </section>
+         <ConfirmModal
+            isOpen={Boolean(requestToComplete)}
+            title="Mark adoption as completed?"
+            message="This will mark the pet as adopted and complete the adoption process."
+            confirmText="Mark as Adopted"
+            loading={completeLoading}
+            onConfirm={handleCompleteAdoption}
+            onCancel={() => {
+               if (!completeLoading) {
+                  setRequestToComplete(null);
+               }
+            }}
+         />
       </main>
    );
 }

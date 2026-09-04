@@ -2,9 +2,11 @@
 
 import { useEffect, useState } from "react";
 import { useParams } from "next/navigation";
+import { toast } from "react-toastify";
 
 import api from "../../../lib/api";
 import { useAuth } from "@/context/AuthContext";
+import LoadingSpinner from "@/components/LoadingSpinner";
 
 export default function PetDetailPage() {
   const params = useParams();
@@ -19,18 +21,24 @@ export default function PetDetailPage() {
   const [liked, setLiked] = useState(false);
   const [likeLoading, setLikeLoading] = useState(false);
 
-  const [showAdoptionForm, setShowAdoptionForm] = useState(false);
-  const [adoptionMessage, setAdoptionMessage] = useState("");
-  const [adoptionLoading, setAdoptionLoading] = useState(false);
-  const [adoptionSuccess, setAdoptionSuccess] = useState("");
-  // Fetch pet details
+  const [showAdoptionForm, setShowAdoptionForm] =
+    useState(false);
+
+  const [adoptionMessage, setAdoptionMessage] =
+    useState("");
+
+  const [adoptionLoading, setAdoptionLoading] =
+    useState(false);
+
   useEffect(() => {
     const fetchPet = async () => {
       try {
         setLoading(true);
         setError("");
 
-        const response = await api.get(`/pets/${petId}`);
+        const response = await api.get(
+          `/pets/${petId}`
+        );
 
         setPet(response.data.pet);
       } catch (error) {
@@ -48,7 +56,6 @@ export default function PetDetailPage() {
     }
   }, [petId]);
 
-  // Check whether current adopter has liked this pet
   useEffect(() => {
     const fetchLikeStatus = async () => {
       if (!user || user.role !== "ADOPTER") {
@@ -58,9 +65,10 @@ export default function PetDetailPage() {
       try {
         const response = await api.get("/likes");
 
-        const isLiked = response.data.likes.some(
-          (like) => like.petId === petId
-        );
+        const isLiked =
+          response.data.likes.some(
+            (like) => like.petId === petId
+          );
 
         setLiked(isLiked);
       } catch (error) {
@@ -82,15 +90,23 @@ export default function PetDetailPage() {
 
       if (liked) {
         await api.delete(`/likes/${petId}`);
+
         setLiked(false);
+
+        toast.info(
+          `${pet.name} removed from your likes`
+        );
       } else {
         await api.post(`/likes/${petId}`);
+
         setLiked(true);
+
+        toast.success(
+          `${pet.name} added to your likes`
+        );
       }
     } catch (error) {
-      console.error(error);
-
-      alert(
+      toast.error(
         error.response?.data?.message ||
           "Unable to update like"
       );
@@ -103,32 +119,35 @@ export default function PetDetailPage() {
     e.preventDefault();
 
     try {
-        setAdoptionLoading(true);
-        setError("");
-        setAdoptionSuccess("");
+      setAdoptionLoading(true);
 
-        const response = await api.post(`/adoptions/${petId}`,{message: adoptionMessage,});
+      const response = await api.post(
+        `/adoptions/${petId}`,
+        {
+          message: adoptionMessage,
+        }
+      );
 
-        setAdoptionSuccess(
-            response.data.message || "Adoption request submitted successfully"
-        );
+      toast.success(
+        response.data.message ||
+          "Adoption request submitted successfully"
+      );
 
-        setAdoptionMessage("");
-        setShowAdoptionForm(false);
+      setAdoptionMessage("");
+      setShowAdoptionForm(false);
     } catch (error) {
-        setError(
-            error.response?.data?.message || "Unable to submit adoption request"
-        );
+      toast.error(
+        error.response?.data?.message ||
+          "Unable to submit adoption request"
+      );
     } finally {
-        setAdoptionLoading(false);
+      setAdoptionLoading(false);
     }
-};
+  };
 
   if (loading) {
     return (
-      <main className="p-8">
-        <p>Loading pet...</p>
-      </main>
+      <LoadingSpinner text="Loading pet..." />
     );
   }
 
@@ -247,7 +266,7 @@ export default function PetDetailPage() {
             <button
               onClick={handleLike}
               disabled={likeLoading}
-              className="w-full border rounded-xl py-3 text-lg font-medium"
+              className="w-full border rounded-xl py-3 text-lg font-medium disabled:opacity-50"
             >
               {likeLoading
                 ? "Please wait..."
@@ -257,57 +276,59 @@ export default function PetDetailPage() {
             </button>
           )}
 
+          {/* Adoption request */}
           {user?.role === "ADOPTER" && (
-  <div className="space-y-3">
-    <button
-      onClick={() =>
-        setShowAdoptionForm((prev) => !prev)
-      }
-      className="w-full bg-black text-white rounded-xl py-3 text-lg font-medium"
-    >
-      {showAdoptionForm
-        ? "Cancel"
-        : `Apply to adopt ${pet.name}`}
-    </button>
+            <div className="space-y-3">
+              <button
+                onClick={() =>
+                  setShowAdoptionForm(
+                    (prev) => !prev
+                  )
+                }
+                className="w-full bg-black text-white rounded-xl py-3 text-lg font-medium"
+              >
+                {showAdoptionForm
+                  ? "Cancel"
+                  : `Apply to adopt ${pet.name}`}
+              </button>
 
-    {showAdoptionForm && (
-      <form
-        onSubmit={handleAdoptionRequest}
-        className="border rounded-xl p-4 space-y-3"
-      >
-        <label className="block font-medium">
-          Tell the owner why you'd like to adopt {pet.name}
-        </label>
+              {showAdoptionForm && (
+                <form
+                  onSubmit={
+                    handleAdoptionRequest
+                  }
+                  className="border rounded-xl p-4 space-y-3"
+                >
+                  <label className="block font-medium">
+                    Tell the owner why you'd like
+                    to adopt {pet.name}
+                  </label>
 
-        <textarea
-          value={adoptionMessage}
-          onChange={(e) =>
-            setAdoptionMessage(e.target.value)
-          }
-          placeholder={`I'd love to adopt ${pet.name} because...`}
-          rows={5}
-          className="w-full border rounded-lg p-3 resize-none"
-        />
+                  <textarea
+                    value={adoptionMessage}
+                    onChange={(e) =>
+                      setAdoptionMessage(
+                        e.target.value
+                      )
+                    }
+                    placeholder={`I'd love to adopt ${pet.name} because...`}
+                    rows={5}
+                    className="w-full border rounded-lg p-3 resize-none"
+                  />
 
-        <button
-          type="submit"
-          disabled={adoptionLoading}
-          className="w-full bg-black text-white rounded-lg py-3"
-        >
-          {adoptionLoading
-            ? "Submitting..."
-            : "Submit adoption request"}
-        </button>
-      </form>
-    )}
-
-    {adoptionSuccess && (
-      <p className="text-green-600">
-        {adoptionSuccess}
-      </p>
-    )}
-  </div>
-)}
+                  <button
+                    type="submit"
+                    disabled={adoptionLoading}
+                    className="w-full bg-black text-white rounded-lg py-3 disabled:opacity-50"
+                  >
+                    {adoptionLoading
+                      ? "Submitting..."
+                      : "Submit adoption request"}
+                  </button>
+                </form>
+              )}
+            </div>
+          )}
 
           {/* Description */}
           <div>

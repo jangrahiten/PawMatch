@@ -2,6 +2,8 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import { toast } from "react-toastify";
+
 import { useAuth } from "../../context/AuthContext";
 
 export default function RegisterPage() {
@@ -16,7 +18,6 @@ export default function RegisterPage() {
     city: "",
   });
 
-  const [error, setError] = useState("");
   const [submitting, setSubmitting] = useState(false);
 
   const handleChange = (e) => {
@@ -31,13 +32,14 @@ export default function RegisterPage() {
 
     try {
       setSubmitting(true);
-      setError("");
 
       await register(form);
 
+      toast.success("Account created successfully");
+
       router.push("/");
     } catch (error) {
-      setError(
+      toast.error(
         error.response?.data?.message ||
           "Unable to create account"
       );
@@ -55,12 +57,6 @@ export default function RegisterPage() {
         <h1 className="text-3xl font-bold">
           Create your PawMatch account
         </h1>
-
-        {error && (
-          <p className="text-red-500">
-            {error}
-          </p>
-        )}
 
         <input
           name="name"
@@ -97,9 +93,17 @@ export default function RegisterPage() {
           onChange={handleChange}
           className="w-full border rounded-lg px-4 py-3"
         >
-          <option value="ADOPTER">Adopter</option>
-          <option value="SHELTER">Shelter</option>
-          <option value="OWNER">Pet Owner</option>
+          <option value="ADOPTER">
+            Adopter
+          </option>
+
+          <option value="SHELTER">
+            Shelter
+          </option>
+
+          <option value="OWNER">
+            Pet Owner
+          </option>
         </select>
 
         <input
@@ -113,7 +117,7 @@ export default function RegisterPage() {
         <button
           type="submit"
           disabled={submitting}
-          className="w-full bg-black text-white rounded-lg py-3"
+          className="w-full bg-black text-white rounded-lg py-3 disabled:opacity-50"
         >
           {submitting
             ? "Creating account..."

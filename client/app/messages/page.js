@@ -5,6 +5,8 @@ import Link from "next/link";
 import api from "@/lib/api";
 import { useAuth } from "@/context/AuthContext";
 import socket from "@/lib/socket";
+import LoadingSpinner from "@/components/LoadingSpinner";
+import EmptyState from "@/components/EmptyState";
 
 export default function MessagesPage() {
    const { user, loading: authLoading } = useAuth();
@@ -82,7 +84,6 @@ export default function MessagesPage() {
       };
 
       const handlePreviewUpdate = (data) => {
-
          setConversations((current) => {
             const updated = current.map((conversation) => {
                if (conversation.id !== data.conversationId) {
@@ -123,11 +124,7 @@ export default function MessagesPage() {
    }, [user]);
 
    if (authLoading || loading) {
-      return (
-         <main className="p-8">
-            <p>Loading conversations...</p>
-         </main>
-      );
+      return <LoadingSpinner text="Loading Conversations..." />;
    }
 
    if (!user) {
@@ -145,9 +142,10 @@ export default function MessagesPage() {
          {error && <p className="text-red-500 mb-4">{error}</p>}
 
          {conversations.length === 0 ? (
-            <p className="text-gray-500">
-               You don't have any conversations yet.
-            </p>
+            <EmptyState
+               title="No conversations yet"
+               description="A conversation will appear here after an adoption request has been accepted."
+            />
          ) : (
             <div className="space-y-4">
                {conversations.map((conversation) => {

@@ -2,18 +2,22 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
+import { toast } from "react-toastify";
 
 import api from "../../../lib/api";
 import { useAuth } from "@/context/AuthContext";
+import ConfirmModal from "@/components/ConfirmModal";
+import LoadingSpinner from "@/components/LoadingSpinner";
+import EmptyState from "@/components/EmptyState";
 
 export default function AdopterDashboardPage() {
    const { user, loading: authLoading } = useAuth();
 
    const [likes, setLikes] = useState([]);
    const [requests, setRequests] = useState([]);
-
    const [loading, setLoading] = useState(true);
-   const [error, setError] = useState("");
+   const [requestToCancel, setRequestToCancel] = useState(null);
+   const [cancelLoading, setCancelLoading] = useState(false);
 
    useEffect(() => {
       const fetchDashboard = async () => {
@@ -23,7 +27,6 @@ export default function AdopterDashboardPage() {
 
          try {
             setLoading(true);
-            setError("");
 
             const [likesResponse, requestsResponse] = await Promise.all([
                api.get("/likes"),
@@ -33,7 +36,7 @@ export default function AdopterDashboardPage() {
             setLikes(likesResponse.data.likes);
             setRequests(requestsResponse.data.requests);
          } catch (error) {
-            setError(
+            toast.error(
                error.response?.data?.message || "Unable to load dashboard",
             );
          } finally {
@@ -46,12 +49,40 @@ export default function AdopterDashboardPage() {
       }
    }, [user, authLoading]);
 
+   const handleCancelRequest = async () => {
+      if (!requestToCancel) return;
+
+      try {
+         setCancelLoading(true);
+
+         await api.patch(`/adoptions/${requestToCancel}/cancel`);
+
+         setRequests((current) =>
+            current.map((request) =>
+               request.id === requestToCancel
+                  ? {
+                       ...request,
+                       status: "CANCELLED",
+                    }
+                  : request,
+            ),
+         );
+
+         toast.success("Adoption request withdrawn successfully");
+
+         setRequestToCancel(null);
+      } catch (error) {
+         toast.error(
+            error.response?.data?.message ||
+               "Unable to cancel adoption request",
+         );
+      } finally {
+         setCancelLoading(false);
+      }
+   };
+
    if (authLoading || loading) {
-      return (
-         <main className="p-8">
-            <p>Loading dashboard...</p>
-         </main>
-      );
+      return <LoadingSpinner text="Loading dashboard..." />;
    }
 
    if (!user || user.role !== "ADOPTER") {
@@ -81,13 +112,22 @@ export default function AdopterDashboardPage() {
             </Link>
          </div>
 
-         {error && <p className="text-red-500">{error}</p>}
-
          <section>
             <h2 className="text-2xl font-semibold mb-5">Liked Pets</h2>
 
             {likes.length === 0 ? (
-               <p className="text-gray-500">You haven't liked any pets yet.</p>
+               <EmptyState
+                  title="No liked pets yet"
+                  description="Pets you like will appear here so you can easily come back to them."
+                  action={
+                     <Link
+                        href="/"
+                        className="inline-block rounded-lg bg-black px-4 py-2 text-white"
+                     >
+                        Discover Pets
+                     </Link>
+                  }
+               />
             ) : (
                <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
                   {likes.map((like) => (
@@ -133,9 +173,18 @@ export default function AdopterDashboardPage() {
             </h2>
 
             {requests.length === 0 ? (
-               <p className="text-gray-500">
-                  You haven't submitted any adoption requests.
-               </p>
+               <EmptyState
+                  title="No adoption requests yet"
+                  description="When you apply to adopt a pet, you’ll be able to track the request here."
+                  action={
+                     <Link
+                        href="/"
+                        className="inline-block rounded-lg border px-4 py-2 hover:bg-gray-50"
+                     >
+                        Browse Pets
+                     </Link>
+                  }
+               />
             ) : (
                <div className="space-y-4">
                   {requests.map((request) => (
@@ -173,7 +222,13 @@ export default function AdopterDashboardPage() {
                                  </p>
                               </div>
 
-                              <StatusBadge status={request.status} />
+                              <StatusBadge
+                                 status={
+                                    request.pet.status === "ADOPTED"
+                                       ? "ADOPTED"
+                                       : request.status
+                                 }
+                              />
                            </div>
 
                            {request.message && (
@@ -181,12 +236,35 @@ export default function AdopterDashboardPage() {
                                  {request.message}
                               </p>
                            )}
+
+                           {request.status === "PENDING" && (
+                              <button
+                                 onClick={() => setRequestToCancel(request.id)}
+                                 className="mt-4 border px-4 py-2 rounded-lg hover:bg-gray-50 transition"
+                              >
+                                 Withdraw Request
+                              </button>
+                           )}
                         </div>
                      </div>
                   ))}
                </div>
             )}
          </section>
+         <ConfirmModal
+            isOpen={Boolean(requestToCancel)}
+            title="Withdraw adoption request?"
+            message="Are you sure you want to withdraw this adoption request? This action cannot be undone."
+            confirmText="Withdraw"
+            danger
+            loading={cancelLoading}
+            onConfirm={handleCancelRequest}
+            onCancel={() => {
+               if (!cancelLoading) {
+                  setRequestToCancel(null);
+               }
+            }}
+         />
       </main>
    );
 }
@@ -197,10 +275,23 @@ function StatusBadge({ status }) {
       ACCEPTED: "Accepted",
       REJECTED: "Rejected",
       CANCELLED: "Cancelled",
+      COMPLETED: "Adopted",
+   };
+
+   const styles = {
+      PENDING: "bg-yellow-50 text-yellow-700 border-yellow-200",
+      ACCEPTED: "bg-green-50 text-green-700 border-green-200",
+      REJECTED: "bg-red-50 text-red-700 border-red-200",
+      CANCELLED: "bg-gray-100 text-gray-600 border-gray-200",
+      COMPLETED: "bg-blue-50 text-blue-700 border-blue-200",
    };
 
    return (
-      <span className="border rounded-full px-3 py-1 text-sm h-fit">
+      <span
+         className={`border rounded-full px-3 py-1 text-sm h-fit ${
+            styles[status] || "bg-gray-50 text-gray-700 border-gray-200"
+         }`}
+      >
          {labels[status] || status}
       </span>
    );

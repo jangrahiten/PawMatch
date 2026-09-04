@@ -6,6 +6,8 @@ import { useParams } from "next/navigation";
 import api from "@/lib/api";
 import socket from "@/lib/socket";
 import { useAuth } from "@/context/AuthContext";
+import LoadingSpinner from "@/components/LoadingSpinner";
+import EmptyState from "@/components/EmptyState";
 
 export default function ConversationPage() {
    const params = useParams();
@@ -61,12 +63,10 @@ export default function ConversationPage() {
       if (!user || !conversationId) return;
 
       const joinConversation = () => {
-
          socket.emit("join-conversation", conversationId);
       };
 
       const handleNewMessage = async (message) => {
-
          if (message.conversationId !== conversationId) {
             return;
          }
@@ -84,7 +84,6 @@ export default function ConversationPage() {
          });
 
          if (message.senderId !== user.id) {
-
             try {
                const response = await api.patch(
                   `/conversations/${conversationId}/read`,
@@ -94,7 +93,7 @@ export default function ConversationPage() {
                   conversationId,
                });
             } catch (error) {
-               console.error("Unable to mark message as read:",error);
+               console.error("Unable to mark message as read:", error);
             }
          }
       };
@@ -117,8 +116,7 @@ export default function ConversationPage() {
          }
       };
 
-      const handleConversationJoined = (data) => {
-      };
+      const handleConversationJoined = (data) => {};
 
       const handleSocketError = (data) => {
          console.error("SOCKET ERROR:", data);
@@ -210,11 +208,7 @@ export default function ConversationPage() {
    };
 
    if (authLoading || loading) {
-      return (
-         <main className="p-8">
-            <p>Loading conversation...</p>
-         </main>
-      );
+      return <LoadingSpinner text="Loading conversation..." />;
    }
 
    if (!user) {
@@ -242,9 +236,10 @@ export default function ConversationPage() {
 
             <div className="flex-1 overflow-y-auto p-4 space-y-3">
                {messages.length === 0 ? (
-                  <p className="text-gray-500 text-center">
-                     No messages yet. Start the conversation.
-                  </p>
+                  <EmptyState
+                     title="No messages yet"
+                     description="Start the conversation by sending the first message."
+                  />
                ) : (
                   messages.map((message) => {
                      const mine = message.senderId === user.id;

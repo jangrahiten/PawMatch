@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "../../context/AuthContext";
+import { toast } from "react-toastify";
 
 export default function LoginPage() {
   const router = useRouter();
@@ -13,7 +14,6 @@ export default function LoginPage() {
     password: "",
   });
 
-  const [error, setError] = useState("");
   const [submitting, setSubmitting] = useState(false);
 
   const handleChange = (e) => {
@@ -28,15 +28,16 @@ export default function LoginPage() {
 
     try {
       setSubmitting(true);
-      setError("");
 
       await login(form.email, form.password);
 
+      toast.success("Logged in successfully");
+
       router.push("/");
     } catch (error) {
-      setError(
+      toast.error(
         error.response?.data?.message ||
-          "Unable to login"
+          "Unable to log in"
       );
     } finally {
       setSubmitting(false);
@@ -52,12 +53,6 @@ export default function LoginPage() {
         <h1 className="text-3xl font-bold">
           Login to PawMatch
         </h1>
-
-        {error && (
-          <p className="text-red-500">
-            {error}
-          </p>
-        )}
 
         <input
           type="email"
@@ -82,7 +77,7 @@ export default function LoginPage() {
         <button
           type="submit"
           disabled={submitting}
-          className="w-full bg-black text-white rounded-lg py-3"
+          className="w-full bg-black text-white rounded-lg py-3 disabled:opacity-50"
         >
           {submitting ? "Logging in..." : "Login"}
         </button>
