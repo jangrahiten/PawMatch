@@ -2,6 +2,7 @@ import { Router } from "express";
 
 import {
    getMe,
+   getSocketToken,
    login,
    logout,
    register,
