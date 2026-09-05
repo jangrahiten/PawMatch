@@ -565,31 +565,6 @@ Key UI features include:
 
 ---
 
-## Screenshots
-
-Add screenshots of the deployed application here.
-
-Suggested screenshots:
-
-```text
-1. Discover / Home
-2. Pet Details
-3. Adopter Dashboard
-4. Shelter Dashboard
-5. Adoption Request Management
-6. Real-Time Chat
-7. Add / Edit Pet
-8. Mobile View
-```
-
-Example:
-
-```md
-![Discover Page](./screenshots/discover.png)
-```
-
----
-
 ## Future Improvements
 
 - Google OAuth
