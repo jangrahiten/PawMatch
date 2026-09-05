@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { toast } from "react-toastify";
 
@@ -44,6 +45,7 @@ export default function NewPetPage() {
 
       if (selectedImages.length > 5) {
          toast.error("You can upload a maximum of 5 images");
+
          e.target.value = "";
          setImages([]);
          return;
@@ -105,164 +107,288 @@ export default function NewPetPage() {
    }
 
    return (
-      <main className="max-w-3xl mx-auto p-6">
-         <h1 className="text-3xl font-bold mb-6">Add a Pet</h1>
-
-         <form onSubmit={handleSubmit} className="space-y-5">
-            <input
-               name="name"
-               placeholder="Pet name"
-               value={form.name}
-               onChange={handleChange}
-               className="w-full border rounded-lg p-3"
-               required
-            />
-
-            <select
-               name="animalType"
-               value={form.animalType}
-               onChange={handleChange}
-               className="w-full border rounded-lg p-3"
+      <main className="mx-auto max-w-4xl p-6 pb-16">
+         {/* Header */}
+         <div className="mb-8">
+            <Link
+               href="/dashboard/shelter"
+               className="text-sm text-gray-500 transition hover:text-black"
             >
-               <option value="DOG">Dog</option>
-               <option value="CAT">Cat</option>
-               <option value="BIRD">Bird</option>
-               <option value="RABBIT">Rabbit</option>
-               <option value="OTHER">Other</option>
-            </select>
+               ← Back to dashboard
+            </Link>
 
-            <input
-               name="breed"
-               placeholder="Breed"
-               value={form.breed}
-               onChange={handleChange}
-               className="w-full border rounded-lg p-3"
-            />
+            <h1 className="mt-4 text-3xl font-bold">Add a Pet</h1>
 
-            <input
-               type="number"
-               name="age"
-               placeholder="Age"
-               value={form.age}
-               onChange={handleChange}
-               min="0"
-               className="w-full border rounded-lg p-3"
-            />
+            <p className="mt-2 text-gray-500">
+               Create a detailed listing to help adopters find the right
+               companion.
+            </p>
+         </div>
 
-            <select
-               name="gender"
-               value={form.gender}
-               onChange={handleChange}
-               className="w-full border rounded-lg p-3"
+         <form onSubmit={handleSubmit} className="space-y-6">
+            {/* Basic Information */}
+            <FormSection
+               title="Basic Information"
+               description="Tell adopters the essentials about this pet."
             >
-               <option value="MALE">Male</option>
-               <option value="FEMALE">Female</option>
-               <option value="UNKNOWN">Unknown</option>
-            </select>
+               <div className="grid gap-5 sm:grid-cols-2">
+                  <Field label="Pet Name" required>
+                     <input
+                        name="name"
+                        placeholder="e.g. Bruno"
+                        value={form.name}
+                        onChange={handleChange}
+                        className={inputClass}
+                        required
+                     />
+                  </Field>
 
-            <select
-               name="size"
-               value={form.size}
-               onChange={handleChange}
-               className="w-full border rounded-lg p-3"
+                  <Field label="Animal Type">
+                     <select
+                        name="animalType"
+                        value={form.animalType}
+                        onChange={handleChange}
+                        className={inputClass}
+                     >
+                        <option value="DOG">Dog</option>
+                        <option value="CAT">Cat</option>
+                        <option value="BIRD">Bird</option>
+                        <option value="RABBIT">Rabbit</option>
+                        <option value="OTHER">Other</option>
+                     </select>
+                  </Field>
+
+                  <Field label="Breed" helper="Leave blank if unknown.">
+                     <input
+                        name="breed"
+                        placeholder="e.g. Labrador Retriever"
+                        value={form.breed}
+                        onChange={handleChange}
+                        className={inputClass}
+                     />
+                  </Field>
+
+                  <Field label="Age">
+                     <input
+                        type="number"
+                        name="age"
+                        placeholder="Age in years"
+                        value={form.age}
+                        onChange={handleChange}
+                        min="0"
+                        className={inputClass}
+                     />
+                  </Field>
+
+                  <Field label="Gender">
+                     <select
+                        name="gender"
+                        value={form.gender}
+                        onChange={handleChange}
+                        className={inputClass}
+                     >
+                        <option value="MALE">Male</option>
+                        <option value="FEMALE">Female</option>
+                        <option value="UNKNOWN">Unknown</option>
+                     </select>
+                  </Field>
+
+                  <Field label="Size">
+                     <select
+                        name="size"
+                        value={form.size}
+                        onChange={handleChange}
+                        className={inputClass}
+                     >
+                        <option value="SMALL">Small</option>
+                        <option value="MEDIUM">Medium</option>
+                        <option value="LARGE">Large</option>
+                     </select>
+                  </Field>
+
+                  <div className="sm:col-span-2">
+                     <Field label="City" required>
+                        <input
+                           name="city"
+                           placeholder="e.g. Delhi"
+                           value={form.city}
+                           onChange={handleChange}
+                           className={inputClass}
+                           required
+                        />
+                     </Field>
+                  </div>
+               </div>
+            </FormSection>
+
+            {/* Description */}
+            <FormSection
+               title="About the Pet"
+               description="A good description helps adopters understand the pet's personality and needs."
             >
-               <option value="SMALL">Small</option>
-               <option value="MEDIUM">Medium</option>
-               <option value="LARGE">Large</option>
-            </select>
+               <Field
+                  label="Description"
+                  required
+                  helper="Mention temperament, habits, activity level, or anything adopters should know."
+               >
+                  <textarea
+                     name="description"
+                     placeholder="Tell adopters about this pet..."
+                     value={form.description}
+                     onChange={handleChange}
+                     rows={6}
+                     className={`${inputClass} resize-none`}
+                     required
+                  />
+               </Field>
+            </FormSection>
 
-            <input
-               name="city"
-               placeholder="City"
-               value={form.city}
-               onChange={handleChange}
-               className="w-full border rounded-lg p-3"
-               required
-            />
+            {/* Health */}
+            <FormSection
+               title="Health & Compatibility"
+               description="Select everything that applies."
+            >
+               <div className="grid gap-4 sm:grid-cols-2">
+                  <Checkbox
+                     name="vaccinated"
+                     label="Vaccinated"
+                     description="Vaccinations are up to date."
+                     checked={form.vaccinated}
+                     onChange={handleChange}
+                  />
 
-            <textarea
-               name="description"
-               placeholder="Tell adopters about this pet..."
-               value={form.description}
-               onChange={handleChange}
-               rows={6}
-               className="w-full border rounded-lg p-3"
-               required
-            />
+                  <Checkbox
+                     name="neutered"
+                     label="Neutered / Spayed"
+                     description="The pet has been neutered or spayed."
+                     checked={form.neutered}
+                     onChange={handleChange}
+                  />
 
-            <div className="grid sm:grid-cols-2 gap-4">
-               <Checkbox
-                  name="vaccinated"
-                  label="Vaccinated"
-                  checked={form.vaccinated}
-                  onChange={handleChange}
-               />
+                  <Checkbox
+                     name="goodWithChildren"
+                     label="Good with children"
+                     description="Comfortable around children."
+                     checked={form.goodWithChildren}
+                     onChange={handleChange}
+                  />
 
-               <Checkbox
-                  name="neutered"
-                  label="Neutered"
-                  checked={form.neutered}
-                  onChange={handleChange}
-               />
+                  <Checkbox
+                     name="goodWithPets"
+                     label="Good with other pets"
+                     description="Comfortable around other animals."
+                     checked={form.goodWithPets}
+                     onChange={handleChange}
+                  />
+               </div>
+            </FormSection>
 
-               <Checkbox
-                  name="goodWithChildren"
-                  label="Good with children"
-                  checked={form.goodWithChildren}
-                  onChange={handleChange}
-               />
+            {/* Images */}
+            <FormSection
+               title="Pet Images"
+               description="Upload clear photos that show the pet well."
+            >
+               <div className="rounded-xl border border-dashed bg-gray-50 p-5">
+                  <input
+                     type="file"
+                     accept="image/*"
+                     multiple
+                     onChange={handleImages}
+                     className="block w-full text-sm text-gray-600 file:mr-4 file:rounded-lg file:border-0 file:bg-black file:px-4 file:py-2 file:text-sm file:font-medium file:text-white hover:file:bg-gray-800"
+                  />
 
-               <Checkbox
-                  name="goodWithPets"
-                  label="Good with other pets"
-                  checked={form.goodWithPets}
-                  onChange={handleChange}
-               />
-            </div>
-
-            <div>
-               <label className="block font-medium mb-2">Pet Images</label>
-
-               <input
-                  type="file"
-                  accept="image/*"
-                  multiple
-                  onChange={handleImages}
-               />
-
-               <p className="text-sm text-gray-500 mt-1">Maximum 5 images.</p>
-
-               {images.length > 0 && (
-                  <p className="text-sm text-gray-600 mt-2">
-                     {images.length} image
-                     {images.length > 1 ? "s" : ""} selected
+                  <p className="mt-3 text-sm text-gray-500">
+                     JPG, PNG or other supported images. Maximum 5 images.
                   </p>
-               )}
-            </div>
 
-            <button
-               type="submit"
-               disabled={submitting}
-               className="w-full bg-black text-white rounded-lg py-3 disabled:opacity-50"
-            >
-               {submitting ? "Creating listing..." : "Create Pet Listing"}
-            </button>
+                  {images.length > 0 && (
+                     <div className="mt-4 rounded-lg bg-white px-4 py-3 text-sm text-gray-700">
+                        {images.length} image
+                        {images.length > 1 ? "s" : ""} selected
+                     </div>
+                  )}
+               </div>
+            </FormSection>
+
+            {/* Actions */}
+            <div className="flex flex-col-reverse gap-3 border-t pt-6 sm:flex-row sm:justify-end">
+               <Link
+                  href="/dashboard/shelter"
+                  className="rounded-xl border px-6 py-3 text-center font-medium transition hover:bg-gray-50"
+               >
+                  Cancel
+               </Link>
+
+               <button
+                  type="submit"
+                  disabled={submitting}
+                  className="rounded-xl bg-black px-6 py-3 font-medium text-white transition hover:bg-gray-800 disabled:cursor-not-allowed disabled:opacity-50"
+               >
+                  {submitting ? "Creating listing..." : "Create Pet Listing"}
+               </button>
+            </div>
          </form>
       </main>
    );
 }
 
-function Checkbox({ name, label, checked, onChange }) {
+const inputClass =
+   "w-full rounded-xl border px-4 py-3 outline-none transition focus:border-black focus:ring-1 focus:ring-black";
+
+function FormSection({ title, description, children }) {
    return (
-      <label className="flex items-center gap-2 border rounded-lg p-3">
+      <section className="rounded-2xl border bg-white p-6">
+         <div className="mb-6">
+            <h2 className="text-xl font-semibold">{title}</h2>
+
+            {description && (
+               <p className="mt-1 text-sm text-gray-500">{description}</p>
+            )}
+         </div>
+
+         {children}
+      </section>
+   );
+}
+
+function Field({ label, helper, required, children }) {
+   return (
+      <div>
+         <label className="mb-2 block text-sm font-medium">
+            {label}
+
+            {required && <span className="ml-1 text-red-500">*</span>}
+         </label>
+
+         {children}
+
+         {helper && <p className="mt-2 text-xs text-gray-500">{helper}</p>}
+      </div>
+   );
+}
+
+function Checkbox({ name, label, description, checked, onChange }) {
+   return (
+      <label
+         className={`flex cursor-pointer gap-3 rounded-xl border p-4 transition ${
+            checked ? "border-black bg-gray-50" : "hover:bg-gray-50"
+         }`}
+      >
          <input
             type="checkbox"
             name={name}
             checked={checked}
             onChange={onChange}
+            className="mt-1 h-4 w-4 accent-black"
          />
 
-         <span>{label}</span>
+         <div>
+            <p className="font-medium">{label}</p>
+
+            {description && (
+               <p className="mt-1 text-sm text-gray-500">{description}</p>
+            )}
+         </div>
       </label>
    );
 }

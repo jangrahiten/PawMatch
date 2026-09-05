@@ -16,7 +16,9 @@ export default function AdopterDashboardPage() {
    const [likes, setLikes] = useState([]);
    const [requests, setRequests] = useState([]);
    const [loading, setLoading] = useState(true);
+
    const [requestToCancel, setRequestToCancel] = useState(null);
+
    const [cancelLoading, setCancelLoading] = useState(false);
 
    useEffect(() => {
@@ -94,26 +96,34 @@ export default function AdopterDashboardPage() {
    }
 
    return (
-      <main className="max-w-7xl mx-auto p-6 space-y-10">
-         <div className="flex items-start justify-between gap-4">
+      <main className="mx-auto max-w-7xl space-y-12 p-6">
+         {/* Header */}
+         <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
             <div>
                <h1 className="text-3xl font-bold">Welcome, {user.name}</h1>
 
-               <p className="text-gray-600 mt-1">
+               <p className="mt-1 text-gray-600">
                   Manage your liked pets and adoption requests.
                </p>
             </div>
 
             <Link
                href="/dashboard/adopter/profile"
-               className="shrink-0 px-4 py-2 border rounded-lg hover:bg-gray-50 transition"
+               className="w-fit shrink-0 rounded-lg border px-4 py-2 transition hover:bg-gray-50"
             >
                Edit Profile
             </Link>
          </div>
 
+         {/* Liked Pets */}
          <section>
-            <h2 className="text-2xl font-semibold mb-5">Liked Pets</h2>
+            <div className="mb-5">
+               <h2 className="text-2xl font-semibold">Liked Pets</h2>
+
+               <p className="mt-1 text-sm text-gray-500">
+                  Pets you've saved while browsing.
+               </p>
+            </div>
 
             {likes.length === 0 ? (
                <EmptyState
@@ -122,44 +132,71 @@ export default function AdopterDashboardPage() {
                   action={
                      <Link
                         href="/"
-                        className="inline-block rounded-lg bg-black px-4 py-2 text-white"
+                        className="inline-block rounded-lg bg-black px-4 py-2 text-white transition hover:bg-gray-800"
                      >
                         Discover Pets
                      </Link>
                   }
                />
             ) : (
-               <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
+               <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
                   {likes.map((like) => (
                      <Link
                         key={like.id}
                         href={`/pets/${like.pet.id}`}
-                        className="border rounded-xl overflow-hidden"
+                        className="group overflow-hidden rounded-2xl border bg-white transition duration-300 hover:-translate-y-1 hover:shadow-lg"
                      >
-                        <div className="h-52 bg-gray-100">
+                        <div className="aspect-[4/3] overflow-hidden bg-gray-100">
                            {like.pet.images?.length > 0 ? (
                               <img
                                  src={like.pet.images[0].imageUrl}
                                  alt={like.pet.name}
-                                 className="w-full h-full object-cover"
+                                 className="h-full w-full object-cover transition duration-500 group-hover:scale-105"
                               />
                            ) : (
-                              <div className="w-full h-full flex items-center justify-center text-gray-400">
+                              <div className="flex h-full w-full items-center justify-center text-gray-400">
                                  No image
                               </div>
                            )}
                         </div>
 
-                        <div className="p-4">
-                           <h3 className="text-xl font-semibold">
-                              {like.pet.name}
-                           </h3>
+                        <div className="p-5">
+                           <div className="flex items-start justify-between gap-3">
+                              <div>
+                                 <h3 className="text-xl font-semibold">
+                                    {like.pet.name}
+                                 </h3>
 
-                           <p className="text-gray-600">
-                              {like.pet.breed || like.pet.animalType}
-                           </p>
+                                 <p className="mt-1 text-sm text-gray-500">
+                                    {like.pet.breed ||
+                                       formatAnimalType(like.pet.animalType)}
+                                 </p>
+                              </div>
 
-                           <p className="text-sm mt-2">📍 {like.pet.city}</p>
+                              {like.pet.age !== null &&
+                                 like.pet.age !== undefined && (
+                                    <span className="shrink-0 rounded-full bg-gray-100 px-3 py-1 text-xs font-medium text-gray-700">
+                                       {like.pet.age}{" "}
+                                       {like.pet.age === 1 ? "yr" : "yrs"}
+                                    </span>
+                                 )}
+                           </div>
+
+                           <div className="mt-4 flex flex-wrap gap-2">
+                              {like.pet.gender && (
+                                 <PetTag value={formatValue(like.pet.gender)} />
+                              )}
+
+                              {like.pet.size && (
+                                 <PetTag value={formatValue(like.pet.size)} />
+                              )}
+                           </div>
+
+                           <div className="mt-5 border-t pt-4">
+                              <p className="text-sm text-gray-600">
+                                 📍 {like.pet.city}
+                              </p>
+                           </div>
                         </div>
                      </Link>
                   ))}
@@ -167,10 +204,15 @@ export default function AdopterDashboardPage() {
             )}
          </section>
 
+         {/* Adoption Requests */}
          <section>
-            <h2 className="text-2xl font-semibold mb-5">
-               My Adoption Requests
-            </h2>
+            <div className="mb-5">
+               <h2 className="text-2xl font-semibold">My Adoption Requests</h2>
+
+               <p className="mt-1 text-sm text-gray-500">
+                  Track the progress of pets you've applied to adopt.
+               </p>
+            </div>
 
             {requests.length === 0 ? (
                <EmptyState
@@ -179,7 +221,7 @@ export default function AdopterDashboardPage() {
                   action={
                      <Link
                         href="/"
-                        className="inline-block rounded-lg border px-4 py-2 hover:bg-gray-50"
+                        className="inline-block rounded-lg border px-4 py-2 transition hover:bg-gray-50"
                      >
                         Browse Pets
                      </Link>
@@ -190,35 +232,39 @@ export default function AdopterDashboardPage() {
                   {requests.map((request) => (
                      <div
                         key={request.id}
-                        className="border rounded-xl p-5 flex gap-5"
+                        className="flex flex-col gap-5 rounded-2xl border bg-white p-5 shadow-sm sm:flex-row"
                      >
-                        <div className="w-28 h-28 bg-gray-100 rounded-lg overflow-hidden shrink-0">
+                        <div className="h-32 w-full shrink-0 overflow-hidden rounded-xl bg-gray-100 sm:h-28 sm:w-28">
                            {request.pet.images?.length > 0 ? (
                               <img
                                  src={request.pet.images[0].imageUrl}
                                  alt={request.pet.name}
-                                 className="w-full h-full object-cover"
+                                 className="h-full w-full object-cover"
                               />
                            ) : (
-                              <div className="w-full h-full flex items-center justify-center text-xs text-gray-400">
+                              <div className="flex h-full w-full items-center justify-center text-xs text-gray-400">
                                  No image
                               </div>
                            )}
                         </div>
 
-                        <div className="flex-1">
-                           <div className="flex justify-between gap-4">
+                        <div className="min-w-0 flex-1">
+                           <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
                               <div>
                                  <Link
                                     href={`/pets/${request.pet.id}`}
-                                    className="text-xl font-semibold"
+                                    className="text-xl font-semibold hover:underline"
                                  >
                                     {request.pet.name}
                                  </Link>
 
-                                 <p className="text-sm text-gray-500">
+                                 <p className="mt-1 text-sm text-gray-500">
                                     {request.pet.breed ||
-                                       request.pet.animalType}
+                                       formatAnimalType(request.pet.animalType)}
+                                 </p>
+
+                                 <p className="mt-2 text-sm text-gray-500">
+                                    📍 {request.pet.city}
                                  </p>
                               </div>
 
@@ -232,15 +278,21 @@ export default function AdopterDashboardPage() {
                            </div>
 
                            {request.message && (
-                              <p className="mt-3 text-gray-700">
-                                 {request.message}
-                              </p>
+                              <div className="mt-4 rounded-xl bg-gray-50 p-4">
+                                 <p className="mb-1 text-xs font-medium uppercase tracking-wide text-gray-400">
+                                    Your message
+                                 </p>
+
+                                 <p className="text-sm leading-6 text-gray-700">
+                                    {request.message}
+                                 </p>
+                              </div>
                            )}
 
                            {request.status === "PENDING" && (
                               <button
                                  onClick={() => setRequestToCancel(request.id)}
-                                 className="mt-4 border px-4 py-2 rounded-lg hover:bg-gray-50 transition"
+                                 className="mt-4 rounded-lg border border-red-200 px-4 py-2 text-sm font-medium text-red-600 transition hover:bg-red-50"
                               >
                                  Withdraw Request
                               </button>
@@ -251,6 +303,7 @@ export default function AdopterDashboardPage() {
                </div>
             )}
          </section>
+
          <ConfirmModal
             isOpen={Boolean(requestToCancel)}
             title="Withdraw adoption request?"
@@ -269,13 +322,39 @@ export default function AdopterDashboardPage() {
    );
 }
 
+function PetTag({ value }) {
+   return (
+      <span className="rounded-full border bg-gray-50 px-3 py-1 text-xs text-gray-600">
+         {value}
+      </span>
+   );
+}
+
+function formatValue(value) {
+   if (!value) return "";
+
+   return value.charAt(0).toUpperCase() + value.slice(1).toLowerCase();
+}
+
+function formatAnimalType(type) {
+   const labels = {
+      DOG: "Dog",
+      CAT: "Cat",
+      BIRD: "Bird",
+      RABBIT: "Rabbit",
+      OTHER: "Other",
+   };
+
+   return labels[type] || type;
+}
+
 function StatusBadge({ status }) {
    const labels = {
       PENDING: "Pending",
       ACCEPTED: "Accepted",
       REJECTED: "Rejected",
       CANCELLED: "Cancelled",
-      COMPLETED: "Adopted",
+      ADOPTED: "Adopted",
    };
 
    const styles = {
@@ -283,13 +362,13 @@ function StatusBadge({ status }) {
       ACCEPTED: "bg-green-50 text-green-700 border-green-200",
       REJECTED: "bg-red-50 text-red-700 border-red-200",
       CANCELLED: "bg-gray-100 text-gray-600 border-gray-200",
-      COMPLETED: "bg-blue-50 text-blue-700 border-blue-200",
+      ADOPTED: "bg-blue-50 text-blue-700 border-blue-200",
    };
 
    return (
       <span
-         className={`border rounded-full px-3 py-1 text-sm h-fit ${
-            styles[status] || "bg-gray-50 text-gray-700 border-gray-200"
+         className={`h-fit w-fit rounded-full border px-3 py-1 text-sm ${
+            styles[status] || "border-gray-200 bg-gray-50 text-gray-700"
          }`}
       >
          {labels[status] || status}

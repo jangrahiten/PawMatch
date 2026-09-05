@@ -11,7 +11,7 @@ const httpServer = createServer(app);
 
 const io = new Server(httpServer, {
   cors: {
-    origin: process.env.CLIENT_URL || "http://localhost:3000",
+    origin: process.env.CLIENT_URL,
     credentials: true,
   },
 });
@@ -19,5 +19,5 @@ const io = new Server(httpServer, {
 initializeSocket(io);
 
 httpServer.listen(PORT, () => {
-  console.log(`Server running at http://localhost:${PORT}`);
+  console.log(`Server running at Port: ${PORT}`);
 });

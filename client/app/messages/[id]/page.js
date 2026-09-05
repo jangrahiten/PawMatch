@@ -1,7 +1,10 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+
+import Link from "next/link";
 import { useParams } from "next/navigation";
+import { toast } from "react-toastify";
 
 import api from "@/lib/api";
 import socket from "@/lib/socket";
@@ -16,11 +19,16 @@ export default function ConversationPage() {
    const { user, loading: authLoading } = useAuth();
 
    const [messages, setMessages] = useState([]);
+
    const [content, setContent] = useState("");
+
    const [loading, setLoading] = useState(true);
+
    const [error, setError] = useState("");
 
    const [typingUser, setTypingUser] = useState(null);
+
+   const [connected, setConnected] = useState(socket.connected);
 
    const typingTimeoutRef = useRef(null);
    const bottomRef = useRef(null);
@@ -42,6 +50,7 @@ export default function ConversationPage() {
             setMessages(fetchedMessages);
 
             await api.patch(`/conversations/${conversationId}/read`);
+
             socket.emit("mark-conversation-read", {
                conversationId,
             });
@@ -63,9 +72,33 @@ export default function ConversationPage() {
       if (!user || !conversationId) return;
 
       const joinConversation = () => {
+         setConnected(true);
+
          socket.emit("join-conversation", conversationId);
       };
 
+      const handleDisconnect = () => {
+         setConnected(false);
+      };
+      const handleReadUpdate = (data) => {
+         if (
+            data.conversationId !== conversationId ||
+            data.userId === user.id
+         ) {
+            return;
+         }
+
+         setMessages((current) =>
+            current.map((message) =>
+               message.senderId === user.id
+                  ? {
+                       ...message,
+                       isRead: true,
+                    }
+                  : message,
+            ),
+         );
+      };
       const handleNewMessage = async (message) => {
          if (message.conversationId !== conversationId) {
             return;
@@ -85,9 +118,7 @@ export default function ConversationPage() {
 
          if (message.senderId !== user.id) {
             try {
-               const response = await api.patch(
-                  `/conversations/${conversationId}/read`,
-               );
+               await api.patch(`/conversations/${conversationId}/read`);
 
                socket.emit("mark-conversation-read", {
                   conversationId,
@@ -116,27 +147,34 @@ export default function ConversationPage() {
          }
       };
 
-      const handleConversationJoined = (data) => {};
-
       const handleSocketError = (data) => {
          console.error("SOCKET ERROR:", data);
       };
 
       const handleConnectError = (error) => {
+         setConnected(false);
+
          console.error("SOCKET CONNECTION ERROR:", error.message);
       };
 
       socket.on("new-message", handleNewMessage);
+
       socket.on("user-typing", handleTyping);
+
       socket.on("user-stop-typing", handleStopTyping);
-      socket.on("conversation-joined", handleConversationJoined);
+
       socket.on("socket-error", handleSocketError);
+
       socket.on("connect_error", handleConnectError);
 
+      socket.on("disconnect", handleDisconnect);
+
+      socket.on("conversation-read-update",handleReadUpdate)
       if (socket.connected) {
          joinConversation();
       } else {
          socket.connect();
+
          socket.once("connect", joinConversation);
       }
 
@@ -146,12 +184,20 @@ export default function ConversationPage() {
          }
 
          socket.off("connect", joinConversation);
+
+         socket.off("disconnect", handleDisconnect);
+
          socket.off("new-message", handleNewMessage);
+
          socket.off("user-typing", handleTyping);
+
          socket.off("user-stop-typing", handleStopTyping);
-         socket.off("conversation-joined", handleConversationJoined);
+
          socket.off("socket-error", handleSocketError);
+
          socket.off("connect_error", handleConnectError);
+         
+         socket.off("conversation-read-update",handleReadUpdate)
       };
    }, [user, conversationId]);
 
@@ -159,7 +205,13 @@ export default function ConversationPage() {
       bottomRef.current?.scrollIntoView({
          behavior: "smooth",
       });
-   }, [messages]);
+   }, [messages, typingUser]);
+
+   useEffect(() => {
+      return () => {
+         clearTimeout(typingTimeoutRef.current);
+      };
+   }, []);
 
    const handleChange = (e) => {
       const value = e.target.value;
@@ -189,7 +241,8 @@ export default function ConversationPage() {
       if (!trimmedContent) return;
 
       if (!socket.connected) {
-         alert("Chat connection is not ready yet");
+         toast.error("Chat connection is not ready yet");
+
          return;
       }
 
@@ -221,93 +274,199 @@ export default function ConversationPage() {
 
    if (error) {
       return (
-         <main className="p-8">
-            <p className="text-red-500">{error}</p>
+         <main className="mx-auto max-w-4xl p-6">
+            <div className="rounded-xl border border-red-200 bg-red-50 p-4 text-red-700">
+               {error}
+            </div>
          </main>
       );
    }
 
    return (
-      <main className="max-w-4xl mx-auto h-[calc(100vh-80px)] p-6 flex flex-col">
-         <div className="border rounded-2xl flex-1 flex flex-col overflow-hidden">
-            <div className="border-b p-4">
-               <h1 className="text-xl font-semibold">Conversation</h1>
+      <main className="mx-auto flex h-[calc(100vh-73px)] max-w-5xl flex-col p-3 sm:p-6">
+         <div className="flex min-h-0 flex-1 flex-col overflow-hidden rounded-2xl border bg-white shadow-sm">
+            {/* Header */}
+            <div className="flex items-center justify-between gap-4 border-b px-4 py-4 sm:px-5">
+               <div className="flex min-w-0 items-center gap-3">
+                  <Link
+                     href="/messages"
+                     className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border transition hover:bg-gray-50"
+                     aria-label="Back to messages"
+                  >
+                     ←
+                  </Link>
+
+                  <div className="min-w-0">
+                     <h1 className="font-semibold">Conversation</h1>
+
+                     <div className="mt-0.5 flex items-center gap-2 text-xs">
+                        <span
+                           className={`h-2 w-2 rounded-full ${
+                              connected ? "bg-green-500" : "bg-gray-300"
+                           }`}
+                        />
+
+                        <span className="text-gray-500">
+                           {connected ? "Connected" : "Reconnecting..."}
+                        </span>
+                     </div>
+                  </div>
+               </div>
+
+               <Link
+                  href="/messages"
+                  className="hidden text-sm text-gray-500 transition hover:text-black sm:block"
+               >
+                  All messages
+               </Link>
             </div>
 
-            <div className="flex-1 overflow-y-auto p-4 space-y-3">
+            {/* Messages */}
+            <div className="flex-1 overflow-y-auto bg-gray-50/50 px-4 py-5 sm:px-6">
                {messages.length === 0 ? (
-                  <EmptyState
-                     title="No messages yet"
-                     description="Start the conversation by sending the first message."
-                  />
+                  <div className="flex h-full items-center justify-center">
+                     <div className="w-full max-w-lg">
+                        <EmptyState
+                           title="No messages yet"
+                           description="Start the conversation by sending the first message."
+                        />
+                     </div>
+                  </div>
                ) : (
-                  messages.map((message) => {
-                     const mine = message.senderId === user.id;
+                  <div className="space-y-4">
+                     {messages.map((message, index) => {
+                        const mine = message.senderId === user.id;
 
-                     return (
-                        <div
-                           key={message.id}
-                           className={`flex ${
-                              mine ? "justify-end" : "justify-start"
-                           }`}
-                        >
+                        const previousMessage = messages[index - 1];
+
+                        const sameSender =
+                           previousMessage?.senderId === message.senderId;
+
+                        return (
                            <div
-                              className={`max-w-[75%] rounded-2xl px-4 py-3 ${
-                                 mine ? "bg-black text-white" : "bg-gray-100"
+                              key={message.id}
+                              className={`flex ${
+                                 mine ? "justify-end" : "justify-start"
                               }`}
                            >
-                              {!mine && (
-                                 <p className="text-xs font-semibold mb-1">
-                                    {message.sender?.name}
-                                 </p>
-                              )}
-
-                              <p>{message.content}</p>
-
-                              <p
-                                 className={`text-xs mt-1 ${
-                                    mine ? "text-gray-300" : "text-gray-500"
+                              <div
+                                 className={`max-w-[85%] sm:max-w-[70%] ${
+                                    mine ? "items-end" : "items-start"
                                  }`}
                               >
-                                 {new Date(
-                                    message.createdAt,
-                                 ).toLocaleTimeString([], {
-                                    hour: "2-digit",
-                                    minute: "2-digit",
-                                 })}
+                                 {!mine && !sameSender && (
+                                    <p className="mb-1 ml-1 text-xs font-medium text-gray-500">
+                                       {message.sender?.name || "User"}
+                                    </p>
+                                 )}
+
+                                 <div
+                                    className={`rounded-2xl px-4 py-2.5 shadow-sm ${
+                                       mine
+                                          ? "rounded-br-md bg-black text-white"
+                                          : "rounded-bl-md border bg-white text-gray-900"
+                                    }`}
+                                 >
+                                    <p className="whitespace-pre-wrap wrap-break-word text-sm leading-6">
+                                       {message.content}
+                                    </p>
+
+                                    <div
+                                       className={`mt-1.5 flex items-center justify-end gap-1 text-[11px] ${
+                                          mine
+                                             ? "text-gray-300"
+                                             : "text-gray-400"
+                                       }`}
+                                    >
+                                       <span>
+                                          {formatTime(message.createdAt)}
+                                       </span>
+
+                                       {mine && (
+                                          <span>
+                                             {message.isRead ? "✓✓" : "✓"}
+                                          </span>
+                                       )}
+                                    </div>
+                                 </div>
+                              </div>
+                           </div>
+                        );
+                     })}
+
+                     {typingUser && (
+                        <div className="flex justify-start">
+                           <div>
+                              <p className="mb-1 ml-1 text-xs text-gray-500">
+                                 {typingUser}
                               </p>
+
+                              <div className="flex w-fit items-center gap-1 rounded-2xl rounded-bl-md border bg-white px-4 py-3 shadow-sm">
+                                 <TypingDot />
+                                 <TypingDot delay="150ms" />
+                                 <TypingDot delay="300ms" />
+                              </div>
                            </div>
                         </div>
-                     );
-                  })
-               )}
+                     )}
 
-               {typingUser && (
-                  <p className="text-sm text-gray-500">
-                     {typingUser} is typing...
-                  </p>
+                     <div ref={bottomRef} />
+                  </div>
                )}
-
-               <div ref={bottomRef} />
             </div>
 
-            <form onSubmit={handleSubmit} className="border-t p-4 flex gap-3">
-               <input
-                  value={content}
-                  onChange={handleChange}
-                  placeholder="Write a message..."
-                  className="flex-1 border rounded-xl px-4 py-3"
-               />
+            {/* Composer */}
+            <div className="border-t bg-white p-3 sm:p-4">
+               <form onSubmit={handleSubmit} className="flex items-end gap-3">
+                  <div className="flex-1">
+                     <textarea
+                        value={content}
+                        onChange={handleChange}
+                        onKeyDown={(e) => {
+                           if (e.key === "Enter" && !e.shiftKey) {
+                              e.preventDefault();
 
-               <button
-                  type="submit"
-                  disabled={!content.trim()}
-                  className="bg-black text-white px-6 rounded-xl disabled:opacity-50"
-               >
-                  Send
-               </button>
-            </form>
+                              handleSubmit(e);
+                           }
+                        }}
+                        placeholder="Write a message..."
+                        rows={1}
+                        className="max-h-32 min-h-12 w-full resize-none rounded-xl border px-4 py-3 outline-none transition focus:border-black focus:ring-1 focus:ring-black"
+                     />
+
+                     <p className="mt-1 hidden text-xs text-gray-400 sm:block">
+                        Press Enter to send · Shift + Enter for a new line
+                     </p>
+                  </div>
+
+                  <button
+                     type="submit"
+                     disabled={!content.trim() || !connected}
+                     className="h-12 rounded-xl bg-black px-5 font-medium text-white transition hover:bg-gray-800 disabled:cursor-not-allowed disabled:opacity-40 sm:px-6"
+                  >
+                     Send
+                  </button>
+               </form>
+            </div>
          </div>
       </main>
+   );
+}
+
+function formatTime(date) {
+   return new Date(date).toLocaleTimeString([], {
+      hour: "2-digit",
+      minute: "2-digit",
+   });
+}
+
+function TypingDot({ delay = "0ms" }) {
+   return (
+      <span
+         className="h-1.5 w-1.5 animate-bounce rounded-full bg-gray-400"
+         style={{
+            animationDelay: delay,
+         }}
+      />
    );
 }

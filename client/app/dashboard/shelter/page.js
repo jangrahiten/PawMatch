@@ -2,10 +2,10 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
+import { toast } from "react-toastify";
 
 import api from "../../../lib/api";
 import { useAuth } from "@/context/AuthContext";
-import { toast } from "react-toastify";
 import ConfirmModal from "@/components/ConfirmModal";
 import LoadingSpinner from "@/components/LoadingSpinner";
 import EmptyState from "@/components/EmptyState";
@@ -17,7 +17,9 @@ export default function ShelterDashboardPage() {
    const [requests, setRequests] = useState([]);
    const [loading, setLoading] = useState(true);
    const [error, setError] = useState("");
+
    const [requestToComplete, setRequestToComplete] = useState(null);
+
    const [completeLoading, setCompleteLoading] = useState(false);
 
    useEffect(() => {
@@ -151,33 +153,45 @@ export default function ShelterDashboardPage() {
    }
 
    return (
-      <main className="max-w-7xl mx-auto p-6 space-y-10">
-         <div className="flex items-start justify-between gap-4">
+      <main className="mx-auto max-w-7xl space-y-12 p-6">
+         {/* Header */}
+         <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
             <div>
                <h1 className="text-3xl font-bold">Welcome, {user.name}</h1>
 
-               <p className="text-gray-600 mt-1">
+               <p className="mt-1 text-gray-600">
                   Manage your pet listings and adoption requests.
                </p>
             </div>
 
             <Link
                href="/dashboard/shelter/profile"
-               className="shrink-0 px-4 py-2 border rounded-lg hover:bg-gray-50 transition"
+               className="w-fit shrink-0 rounded-lg border px-4 py-2 transition hover:bg-gray-50"
             >
                Edit Profile
             </Link>
          </div>
 
-         {error && <p className="text-red-500">{error}</p>}
+         {error && (
+            <div className="rounded-xl border border-red-200 bg-red-50 p-4 text-red-700">
+               {error}
+            </div>
+         )}
 
+         {/* My Pets */}
          <section>
-            <div className="flex justify-between items-center mb-5">
-               <h2 className="text-2xl font-semibold">My Pets</h2>
+            <div className="mb-5 flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
+               <div>
+                  <h2 className="text-2xl font-semibold">My Pets</h2>
+
+                  <p className="mt-1 text-sm text-gray-500">
+                     Manage your active and past pet listings.
+                  </p>
+               </div>
 
                <Link
                   href="/dashboard/shelter/pets/new"
-                  className="bg-black text-white px-4 py-2 rounded-lg"
+                  className="w-fit rounded-lg bg-black px-4 py-2 text-white transition hover:bg-gray-800"
                >
                   Add Pet
                </Link>
@@ -190,63 +204,87 @@ export default function ShelterDashboardPage() {
                   action={
                      <Link
                         href="/dashboard/shelter/pets/new"
-                        className="inline-block rounded-lg bg-black px-4 py-2 text-white"
+                        className="inline-block rounded-lg bg-black px-4 py-2 text-white transition hover:bg-gray-800"
                      >
                         Add a Pet
                      </Link>
                   }
                />
             ) : (
-               <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
+               <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
                   {pets.map((pet) => (
                      <div
                         key={pet.id}
-                        className="border rounded-xl overflow-hidden"
+                        className="group overflow-hidden rounded-2xl border bg-white transition duration-300 hover:-translate-y-1 hover:shadow-lg"
                      >
                         <Link href={`/pets/${pet.id}`}>
-                           <div className="h-52 bg-gray-100">
+                           <div className="relative aspect-[4/3] overflow-hidden bg-gray-100">
                               {pet.images?.length > 0 ? (
                                  <img
                                     src={pet.images[0].imageUrl}
                                     alt={pet.name}
-                                    className="w-full h-full object-cover"
+                                    className="h-full w-full object-cover transition duration-500 group-hover:scale-105"
                                  />
                               ) : (
-                                 <div className="w-full h-full flex items-center justify-center text-gray-400">
+                                 <div className="flex h-full w-full items-center justify-center text-gray-400">
                                     No image
                                  </div>
                               )}
+
+                              <div className="absolute left-3 top-3">
+                                 <PetStatusBadge status={pet.status} />
+                              </div>
                            </div>
                         </Link>
 
-                        <div className="p-4">
-                           <div className="flex justify-between items-center">
-                              <Link href={`/pets/${pet.id}`}>
-                                 <h3 className="text-xl font-semibold hover:underline">
+                        <div className="p-5">
+                           <div className="flex items-start justify-between gap-3">
+                              <div>
+                                 <Link
+                                    href={`/pets/${pet.id}`}
+                                    className="text-xl font-semibold hover:underline"
+                                 >
                                     {pet.name}
-                                 </h3>
-                              </Link>
+                                 </Link>
 
-                              <span className="text-sm">{pet.status}</span>
+                                 <p className="mt-1 text-sm text-gray-500">
+                                    {pet.breed ||
+                                       formatAnimalType(pet.animalType)}
+                                 </p>
+                              </div>
+
+                              {pet.age !== null && pet.age !== undefined && (
+                                 <span className="shrink-0 rounded-full bg-gray-100 px-3 py-1 text-xs font-medium">
+                                    {pet.age} {pet.age === 1 ? "yr" : "yrs"}
+                                 </span>
+                              )}
                            </div>
 
-                           <p className="text-gray-600">
-                              {pet.breed || pet.animalType}
+                           <div className="mt-4 flex flex-wrap gap-2">
+                              {pet.gender && (
+                                 <PetTag value={formatValue(pet.gender)} />
+                              )}
+
+                              {pet.size && (
+                                 <PetTag value={formatValue(pet.size)} />
+                              )}
+                           </div>
+
+                           <p className="mt-4 text-sm text-gray-600">
+                              📍 {pet.city}
                            </p>
 
-                           <p className="text-sm mt-2">📍 {pet.city}</p>
-
-                           <div className="mt-4 flex gap-3">
+                           <div className="mt-5 flex gap-3 border-t pt-4">
                               <Link
                                  href={`/pets/${pet.id}`}
-                                 className="border px-3 py-2 rounded-lg"
+                                 className="flex-1 rounded-lg border px-3 py-2 text-center text-sm font-medium transition hover:bg-gray-50"
                               >
                                  View
                               </Link>
 
                               <Link
                                  href={`/dashboard/shelter/pets/${pet.id}/edit`}
-                                 className="bg-black text-white px-3 py-2 rounded-lg"
+                                 className="flex-1 rounded-lg bg-black px-3 py-2 text-center text-sm font-medium text-white transition hover:bg-gray-800"
                               >
                                  Edit
                               </Link>
@@ -258,8 +296,15 @@ export default function ShelterDashboardPage() {
             )}
          </section>
 
+         {/* Adoption Requests */}
          <section>
-            <h2 className="text-2xl font-semibold mb-5">Adoption Requests</h2>
+            <div className="mb-5">
+               <h2 className="text-2xl font-semibold">Adoption Requests</h2>
+
+               <p className="mt-1 text-sm text-gray-500">
+                  Review and manage requests from interested adopters.
+               </p>
+            </div>
 
             {requests.length === 0 ? (
                <EmptyState
@@ -269,36 +314,60 @@ export default function ShelterDashboardPage() {
             ) : (
                <div className="space-y-4">
                   {requests.map((request) => (
-                     <div key={request.id} className="border rounded-xl p-5">
-                        <div className="flex justify-between gap-4">
+                     <div
+                        key={request.id}
+                        className="rounded-2xl border bg-white p-5 shadow-sm"
+                     >
+                        <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
                            <div>
-                              <h3 className="text-xl font-semibold">
+                              <Link
+                                 href={`/pets/${request.pet.id}`}
+                                 className="text-xl font-semibold hover:underline"
+                              >
                                  {request.pet.name}
-                              </h3>
+                              </Link>
 
-                              <p className="text-sm text-gray-500">
-                                 Request from {request.adopter.name}
+                              <p className="mt-1 text-sm text-gray-500">
+                                 Request from{" "}
+                                 <span className="font-medium text-gray-700">
+                                    {request.adopter.name}
+                                 </span>
+                              </p>
+
+                              <p className="mt-2 text-sm text-gray-500">
+                                 {request.pet.breed ||
+                                    formatAnimalType(request.pet.animalType)}
                               </p>
                            </div>
 
-                           <span className="border rounded-full px-3 py-1 text-sm h-fit">
-                              {request.status}
-                           </span>
+                           <RequestStatusBadge
+                              status={
+                                 request.pet.status === "ADOPTED"
+                                    ? "ADOPTED"
+                                    : request.status
+                              }
+                           />
                         </div>
 
                         {request.message && (
-                           <p className="mt-4 text-gray-700">
-                              {request.message}
-                           </p>
+                           <div className="mt-4 rounded-xl bg-gray-50 p-4">
+                              <p className="mb-1 text-xs font-medium uppercase tracking-wide text-gray-400">
+                                 Adopter's message
+                              </p>
+
+                              <p className="text-sm leading-6 text-gray-700">
+                                 {request.message}
+                              </p>
+                           </div>
                         )}
 
                         {request.status === "PENDING" && (
-                           <div className="flex gap-3 mt-5">
+                           <div className="mt-5 flex flex-col gap-3 sm:flex-row">
                               <button
                                  onClick={() =>
                                     handleRequestStatus(request.id, "ACCEPTED")
                                  }
-                                 className="bg-black text-white px-4 py-2 rounded-lg"
+                                 className="rounded-lg bg-black px-4 py-2 text-sm font-medium text-white transition hover:bg-gray-800"
                               >
                                  Accept
                               </button>
@@ -307,7 +376,7 @@ export default function ShelterDashboardPage() {
                                  onClick={() =>
                                     handleRequestStatus(request.id, "REJECTED")
                                  }
-                                 className="border px-4 py-2 rounded-lg"
+                                 className="rounded-lg border border-red-200 px-4 py-2 text-sm font-medium text-red-600 transition hover:bg-red-50"
                               >
                                  Reject
                               </button>
@@ -321,7 +390,7 @@ export default function ShelterDashboardPage() {
                                     onClick={() =>
                                        setRequestToComplete(request.id)
                                     }
-                                    className="bg-black text-white px-4 py-2 rounded-lg"
+                                    className="rounded-lg bg-black px-4 py-2 text-sm font-medium text-white transition hover:bg-gray-800"
                                  >
                                     Mark as Adopted
                                  </button>
@@ -329,15 +398,16 @@ export default function ShelterDashboardPage() {
                            )}
 
                         {request.pet.status === "ADOPTED" && (
-                           <p className="mt-5 text-sm font-medium">
+                           <div className="mt-5 rounded-lg bg-blue-50 px-4 py-3 text-sm font-medium text-blue-700">
                               Adoption completed
-                           </p>
+                           </div>
                         )}
                      </div>
                   ))}
                </div>
             )}
          </section>
+
          <ConfirmModal
             isOpen={Boolean(requestToComplete)}
             title="Mark adoption as completed?"
@@ -352,5 +422,85 @@ export default function ShelterDashboardPage() {
             }}
          />
       </main>
+   );
+}
+
+function PetTag({ value }) {
+   return (
+      <span className="rounded-full border bg-gray-50 px-3 py-1 text-xs text-gray-600">
+         {value}
+      </span>
+   );
+}
+
+function formatValue(value) {
+   if (!value) return "";
+
+   return value.charAt(0).toUpperCase() + value.slice(1).toLowerCase();
+}
+
+function formatAnimalType(type) {
+   const labels = {
+      DOG: "Dog",
+      CAT: "Cat",
+      BIRD: "Bird",
+      RABBIT: "Rabbit",
+      OTHER: "Other",
+   };
+
+   return labels[type] || type;
+}
+
+function PetStatusBadge({ status }) {
+   const labels = {
+      AVAILABLE: "Available",
+      PENDING: "Pending",
+      ADOPTED: "Adopted",
+      INACTIVE: "Inactive",
+   };
+
+   const styles = {
+      AVAILABLE: "bg-green-50 text-green-700 border-green-200",
+      PENDING: "bg-yellow-50 text-yellow-700 border-yellow-200",
+      ADOPTED: "bg-blue-50 text-blue-700 border-blue-200",
+      INACTIVE: "bg-gray-100 text-gray-600 border-gray-200",
+   };
+
+   return (
+      <span
+         className={`rounded-full border px-3 py-1 text-xs font-medium ${
+            styles[status] || "border-gray-200 bg-gray-50 text-gray-700"
+         }`}
+      >
+         {labels[status] || status}
+      </span>
+   );
+}
+
+function RequestStatusBadge({ status }) {
+   const labels = {
+      PENDING: "Pending",
+      ACCEPTED: "Accepted",
+      REJECTED: "Rejected",
+      CANCELLED: "Cancelled",
+      ADOPTED: "Adopted",
+   };
+
+   const styles = {
+      PENDING: "bg-yellow-50 text-yellow-700 border-yellow-200",
+      ACCEPTED: "bg-green-50 text-green-700 border-green-200",
+      REJECTED: "bg-red-50 text-red-700 border-red-200",
+      CANCELLED: "bg-gray-100 text-gray-600 border-gray-200",
+      ADOPTED: "bg-blue-50 text-blue-700 border-blue-200",
+   };
+
+   return (
+      <span
+         className={`h-fit w-fit rounded-full border px-3 py-1 text-sm ${
+            styles[status] || "border-gray-200 bg-gray-50 text-gray-700"
+         }`}
+      >
+         {labels[status] || status}
+      </span>
    );
 }

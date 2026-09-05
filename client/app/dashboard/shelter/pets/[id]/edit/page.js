@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
 import { toast } from "react-toastify";
 
@@ -33,12 +34,16 @@ export default function EditPetPage() {
    });
 
    const [existingImages, setExistingImages] = useState([]);
+
    const [newImages, setNewImages] = useState([]);
 
    const [loading, setLoading] = useState(true);
    const [submitting, setSubmitting] = useState(false);
+
    const [error, setError] = useState("");
+
    const [imageToDelete, setImageToDelete] = useState(null);
+
    const [deleteImageLoading, setDeleteImageLoading] = useState(false);
 
    useEffect(() => {
@@ -48,6 +53,7 @@ export default function EditPetPage() {
             setError("");
 
             const response = await api.get(`/pets/${petId}`);
+
             const pet = response.data.pet;
 
             if (pet.ownerId !== user?.id) {
@@ -190,190 +196,263 @@ export default function EditPetPage() {
    }
 
    return (
-      <main className="max-w-3xl mx-auto p-6">
-         <h1 className="text-3xl font-bold mb-6">Edit {form.name}</h1>
-
-         <form onSubmit={handleSubmit} className="space-y-5">
-            <input
-               name="name"
-               value={form.name}
-               onChange={handleChange}
-               placeholder="Pet name"
-               className="w-full border rounded-lg p-3"
-            />
-
-            <select
-               name="animalType"
-               value={form.animalType}
-               onChange={handleChange}
-               className="w-full border rounded-lg p-3"
+      <main className="mx-auto max-w-4xl p-6 pb-16">
+         <div className="mb-8">
+            <Link
+               href="/dashboard/shelter"
+               className="text-sm text-gray-500 transition hover:text-black"
             >
-               <option value="DOG">Dog</option>
-               <option value="CAT">Cat</option>
-               <option value="BIRD">Bird</option>
-               <option value="RABBIT">Rabbit</option>
-               <option value="OTHER">Other</option>
-            </select>
+               ← Back to dashboard
+            </Link>
 
-            <input
-               name="breed"
-               value={form.breed}
-               onChange={handleChange}
-               placeholder="Breed"
-               className="w-full border rounded-lg p-3"
-            />
+            <h1 className="mt-4 text-3xl font-bold">Edit {form.name}</h1>
 
-            <input
-               type="number"
-               name="age"
-               value={form.age}
-               onChange={handleChange}
-               placeholder="Age"
-               min="0"
-               className="w-full border rounded-lg p-3"
-            />
+            <p className="mt-2 text-gray-500">
+               Update the listing information, availability and images.
+            </p>
+         </div>
 
-            <select
-               name="gender"
-               value={form.gender}
-               onChange={handleChange}
-               className="w-full border rounded-lg p-3"
+         <form onSubmit={handleSubmit} className="space-y-6">
+            <FormSection
+               title="Basic Information"
+               description="Update the main details adopters see."
             >
-               <option value="MALE">Male</option>
-               <option value="FEMALE">Female</option>
-               <option value="UNKNOWN">Unknown</option>
-            </select>
+               <div className="grid gap-5 sm:grid-cols-2">
+                  <Field label="Pet Name">
+                     <input
+                        name="name"
+                        value={form.name}
+                        onChange={handleChange}
+                        placeholder="Pet name"
+                        className={inputClass}
+                     />
+                  </Field>
 
-            <select
-               name="size"
-               value={form.size}
-               onChange={handleChange}
-               className="w-full border rounded-lg p-3"
+                  <Field label="Animal Type">
+                     <select
+                        name="animalType"
+                        value={form.animalType}
+                        onChange={handleChange}
+                        className={inputClass}
+                     >
+                        <option value="DOG">Dog</option>
+                        <option value="CAT">Cat</option>
+                        <option value="BIRD">Bird</option>
+                        <option value="RABBIT">Rabbit</option>
+                        <option value="OTHER">Other</option>
+                     </select>
+                  </Field>
+
+                  <Field label="Breed">
+                     <input
+                        name="breed"
+                        value={form.breed}
+                        onChange={handleChange}
+                        placeholder="Breed"
+                        className={inputClass}
+                     />
+                  </Field>
+
+                  <Field label="Age">
+                     <input
+                        type="number"
+                        name="age"
+                        value={form.age}
+                        onChange={handleChange}
+                        placeholder="Age"
+                        min="0"
+                        className={inputClass}
+                     />
+                  </Field>
+
+                  <Field label="Gender">
+                     <select
+                        name="gender"
+                        value={form.gender}
+                        onChange={handleChange}
+                        className={inputClass}
+                     >
+                        <option value="MALE">Male</option>
+                        <option value="FEMALE">Female</option>
+                        <option value="UNKNOWN">Unknown</option>
+                     </select>
+                  </Field>
+
+                  <Field label="Size">
+                     <select
+                        name="size"
+                        value={form.size}
+                        onChange={handleChange}
+                        className={inputClass}
+                     >
+                        <option value="SMALL">Small</option>
+                        <option value="MEDIUM">Medium</option>
+                        <option value="LARGE">Large</option>
+                     </select>
+                  </Field>
+
+                  <Field label="City">
+                     <input
+                        name="city"
+                        value={form.city}
+                        onChange={handleChange}
+                        placeholder="City"
+                        className={inputClass}
+                     />
+                  </Field>
+
+                  <Field
+                     label="Listing Status"
+                     helper="Controls whether adopters can currently apply."
+                  >
+                     <select
+                        name="status"
+                        value={form.status}
+                        onChange={handleChange}
+                        className={inputClass}
+                     >
+                        <option value="AVAILABLE">Available</option>
+                        <option value="PENDING">Pending</option>
+                        <option value="ADOPTED">Adopted</option>
+                        <option value="INACTIVE">Inactive</option>
+                     </select>
+                  </Field>
+               </div>
+            </FormSection>
+
+            <FormSection
+               title="About the Pet"
+               description="Keep the description accurate and useful for adopters."
             >
-               <option value="SMALL">Small</option>
-               <option value="MEDIUM">Medium</option>
-               <option value="LARGE">Large</option>
-            </select>
+               <Field label="Description">
+                  <textarea
+                     name="description"
+                     value={form.description}
+                     onChange={handleChange}
+                     rows={6}
+                     className={`${inputClass} resize-none`}
+                  />
+               </Field>
+            </FormSection>
 
-            <input
-               name="city"
-               value={form.city}
-               onChange={handleChange}
-               placeholder="City"
-               className="w-full border rounded-lg p-3"
-            />
-
-            <textarea
-               name="description"
-               value={form.description}
-               onChange={handleChange}
-               rows={6}
-               className="w-full border rounded-lg p-3"
-            />
-
-            <select
-               name="status"
-               value={form.status}
-               onChange={handleChange}
-               className="w-full border rounded-lg p-3"
+            <FormSection
+               title="Health & Compatibility"
+               description="Select everything that currently applies."
             >
-               <option value="AVAILABLE">Available</option>
-               <option value="PENDING">Pending</option>
-               <option value="ADOPTED">Adopted</option>
-               <option value="INACTIVE">Inactive</option>
-            </select>
+               <div className="grid gap-4 sm:grid-cols-2">
+                  <Checkbox
+                     name="vaccinated"
+                     label="Vaccinated"
+                     description="Vaccinations are up to date."
+                     checked={form.vaccinated}
+                     onChange={handleChange}
+                  />
 
-            <div className="grid sm:grid-cols-2 gap-4">
-               <Checkbox
-                  name="vaccinated"
-                  label="Vaccinated"
-                  checked={form.vaccinated}
-                  onChange={handleChange}
-               />
+                  <Checkbox
+                     name="neutered"
+                     label="Neutered / Spayed"
+                     description="The pet has been neutered or spayed."
+                     checked={form.neutered}
+                     onChange={handleChange}
+                  />
 
-               <Checkbox
-                  name="neutered"
-                  label="Neutered"
-                  checked={form.neutered}
-                  onChange={handleChange}
-               />
+                  <Checkbox
+                     name="goodWithChildren"
+                     label="Good with children"
+                     description="Comfortable around children."
+                     checked={form.goodWithChildren}
+                     onChange={handleChange}
+                  />
 
-               <Checkbox
-                  name="goodWithChildren"
-                  label="Good with children"
-                  checked={form.goodWithChildren}
-                  onChange={handleChange}
-               />
+                  <Checkbox
+                     name="goodWithPets"
+                     label="Good with other pets"
+                     description="Comfortable around other animals."
+                     checked={form.goodWithPets}
+                     onChange={handleChange}
+                  />
+               </div>
+            </FormSection>
 
-               <Checkbox
-                  name="goodWithPets"
-                  label="Good with pets"
-                  checked={form.goodWithPets}
-                  onChange={handleChange}
-               />
-            </div>
-
-            <section>
-               <h2 className="text-xl font-semibold mb-3">Existing Images</h2>
-
+            <FormSection
+               title="Images"
+               description={`${existingImages.length}/5 images currently uploaded.`}
+            >
                {existingImages.length === 0 ? (
-                  <p className="text-gray-500">No images uploaded.</p>
+                  <div className="rounded-xl border border-dashed bg-gray-50 p-8 text-center text-sm text-gray-500">
+                     No images uploaded yet.
+                  </div>
                ) : (
-                  <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
+                  <div className="grid grid-cols-2 gap-4 sm:grid-cols-3">
                      {existingImages.map((image) => (
                         <div
                            key={image.id}
-                           className="border rounded-lg overflow-hidden"
+                           className="overflow-hidden rounded-xl border bg-white"
                         >
                            <img
                               src={image.imageUrl}
                               alt={form.name}
-                              className="w-full h-36 object-cover"
+                              className="aspect-square w-full object-cover"
                            />
 
                            <button
                               type="button"
                               onClick={() => setImageToDelete(image.id)}
-                              className="w-full border-t py-2 text-red-500"
+                              className="w-full border-t py-2.5 text-sm font-medium text-red-600 transition hover:bg-red-50"
                            >
-                              Delete
+                              Delete Image
                            </button>
                         </div>
                      ))}
                   </div>
                )}
-            </section>
 
-            <section>
-               <label className="block font-medium mb-2">Add More Images</label>
+               {existingImages.length < 5 && (
+                  <div className="mt-6 rounded-xl border border-dashed bg-gray-50 p-5">
+                     <label className="mb-3 block font-medium">
+                        Add More Images
+                     </label>
 
-               <input
-                  type="file"
-                  accept="image/*"
-                  multiple
-                  onChange={handleNewImages}
-               />
+                     <input
+                        type="file"
+                        accept="image/*"
+                        multiple
+                        onChange={handleNewImages}
+                        className="block w-full text-sm text-gray-600 file:mr-4 file:rounded-lg file:border-0 file:bg-black file:px-4 file:py-2 file:text-sm file:font-medium file:text-white hover:file:bg-gray-800"
+                     />
 
-               <p className="text-sm text-gray-500 mt-1">
-                  Maximum 5 images total.
-               </p>
+                     <p className="mt-3 text-sm text-gray-500">
+                        Maximum 5 images total.
+                     </p>
 
-               {newImages.length > 0 && (
-                  <p className="text-sm text-gray-600 mt-2">
-                     {newImages.length} new image
-                     {newImages.length > 1 ? "s" : ""} selected
-                  </p>
+                     {newImages.length > 0 && (
+                        <div className="mt-4 rounded-lg bg-white px-4 py-3 text-sm">
+                           {newImages.length} new image
+                           {newImages.length > 1 ? "s" : ""} selected
+                        </div>
+                     )}
+                  </div>
                )}
-            </section>
+            </FormSection>
 
-            <button
-               type="submit"
-               disabled={submitting}
-               className="w-full bg-black text-white rounded-lg py-3 disabled:opacity-50"
-            >
-               {submitting ? "Saving..." : "Save Changes"}
-            </button>
+            <div className="flex flex-col-reverse gap-3 border-t pt-6 sm:flex-row sm:justify-end">
+               <Link
+                  href="/dashboard/shelter"
+                  className="rounded-xl border px-6 py-3 text-center font-medium transition hover:bg-gray-50"
+               >
+                  Cancel
+               </Link>
+
+               <button
+                  type="submit"
+                  disabled={submitting}
+                  className="rounded-xl bg-black px-6 py-3 font-medium text-white transition hover:bg-gray-800 disabled:cursor-not-allowed disabled:opacity-50"
+               >
+                  {submitting ? "Saving..." : "Save Changes"}
+               </button>
+            </div>
          </form>
+
          <ConfirmModal
             isOpen={Boolean(imageToDelete)}
             title="Delete image?"
@@ -392,17 +471,57 @@ export default function EditPetPage() {
    );
 }
 
-function Checkbox({ name, label, checked, onChange }) {
+const inputClass =
+   "w-full rounded-xl border px-4 py-3 outline-none transition focus:border-black focus:ring-1 focus:ring-black";
+
+function FormSection({ title, description, children }) {
    return (
-      <label className="flex items-center gap-2 border rounded-lg p-3">
+      <section className="rounded-2xl border bg-white p-6">
+         <div className="mb-6">
+            <h2 className="text-xl font-semibold">{title}</h2>
+
+            {description && (
+               <p className="mt-1 text-sm text-gray-500">{description}</p>
+            )}
+         </div>
+
+         {children}
+      </section>
+   );
+}
+
+function Field({ label, helper, children }) {
+   return (
+      <div>
+         <label className="mb-2 block text-sm font-medium">{label}</label>
+
+         {children}
+
+         {helper && <p className="mt-2 text-xs text-gray-500">{helper}</p>}
+      </div>
+   );
+}
+
+function Checkbox({ name, label, description, checked, onChange }) {
+   return (
+      <label
+         className={`flex cursor-pointer gap-3 rounded-xl border p-4 transition ${
+            checked ? "border-black bg-gray-50" : "hover:bg-gray-50"
+         }`}
+      >
          <input
             type="checkbox"
             name={name}
             checked={checked}
             onChange={onChange}
+            className="mt-1 h-4 w-4 accent-black"
          />
 
-         <span>{label}</span>
+         <div>
+            <p className="font-medium">{label}</p>
+
+            <p className="mt-1 text-sm text-gray-500">{description}</p>
+         </div>
       </label>
    );
 }

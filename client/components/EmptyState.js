@@ -1,6 +1,6 @@
 export default function EmptyState({ title, description, action }) {
    return (
-      <div className="flex min-h-[220px] flex-col items-center justify-center rounded-2xl border border-dashed p-8 text-center">
+      <div className="flex min-h-45 flex-col items-center justify-center rounded-2xl border border-dashed p-8 text-center">
          <h3 className="text-lg font-semibold">{title}</h3>
 
          {description && (

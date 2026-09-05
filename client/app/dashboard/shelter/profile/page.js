@@ -1,9 +1,11 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import Link from "next/link";
+import { toast } from "react-toastify";
+
 import api from "@/lib/api";
 import { useAuth } from "@/context/AuthContext";
-import { toast } from "react-toastify";
 import LoadingSpinner from "@/components/LoadingSpinner";
 
 export default function ShelterProfilePage() {
@@ -68,7 +70,6 @@ export default function ShelterProfilePage() {
 
       try {
          setSaving(true);
-         setError("");
 
          await api.patch("/profile/shelter", form);
 
@@ -103,89 +104,153 @@ export default function ShelterProfilePage() {
    }
 
    return (
-      <main className="max-w-3xl mx-auto p-6">
-         <h1 className="text-3xl font-bold mb-2">Shelter Profile</h1>
+      <main className="mx-auto max-w-4xl p-6 pb-16">
+         <div className="mb-8">
+            <Link
+               href="/dashboard/shelter"
+               className="text-sm text-gray-500 transition hover:text-black"
+            >
+               ← Back to dashboard
+            </Link>
 
-         <p className="text-gray-500 mb-8">
-            Manage your shelter information and contact details.
-         </p>
+            <h1 className="mt-4 text-3xl font-bold">Shelter Profile</h1>
 
-         {error && <p className="text-red-500 mb-4">{error}</p>}
+            <p className="mt-2 text-gray-500">
+               Manage the information adopters see about your shelter or
+               organization.
+            </p>
+         </div>
+
+         {error && (
+            <div className="mb-6 rounded-xl border border-red-200 bg-red-50 p-4 text-red-700">
+               {error}
+            </div>
+         )}
 
          <form onSubmit={handleSubmit} className="space-y-6">
-            <div>
-               <label className="block font-medium mb-2">Shelter Name</label>
-
-               <input
-                  type="text"
-                  name="shelterName"
-                  value={form.shelterName}
-                  onChange={handleChange}
-                  className="w-full border rounded-xl px-4 py-3"
-                  placeholder="Happy Paws Shelter"
-               />
-            </div>
-
-            <div>
-               <label className="block font-medium mb-2">Description</label>
-
-               <textarea
-                  name="description"
-                  value={form.description}
-                  onChange={handleChange}
-                  rows={5}
-                  className="w-full border rounded-xl px-4 py-3"
-                  placeholder="Tell adopters about your shelter..."
-               />
-            </div>
-
-            <div>
-               <label className="block font-medium mb-2">Address</label>
-
-               <input
-                  type="text"
-                  name="address"
-                  value={form.address}
-                  onChange={handleChange}
-                  className="w-full border rounded-xl px-4 py-3"
-                  placeholder="Shelter address"
-               />
-            </div>
-
-            <div>
-               <label className="block font-medium mb-2">Phone</label>
-
-               <input
-                  type="text"
-                  name="phone"
-                  value={form.phone}
-                  onChange={handleChange}
-                  className="w-full border rounded-xl px-4 py-3"
-                  placeholder="+91..."
-               />
-            </div>
-
-            <div>
-               <label className="block font-medium mb-2">Website</label>
-
-               <input
-                  type="text"
-                  name="website"
-                  value={form.website}
-                  onChange={handleChange}
-                  className="w-full border rounded-xl px-4 py-3"
-                  placeholder="https://example.com"
-               />
-            </div>
-
-            <button
-               type="submit"
-               disabled={saving}
-               className="bg-black text-white px-6 py-3 rounded-xl disabled:opacity-50"
+            <FormSection
+               title="Shelter Information"
+               description="Introduce your shelter to potential adopters."
             >
-               {saving ? "Saving..." : "Save Profile"}
-            </button>
+               <div className="space-y-5">
+                  <Field label="Shelter Name">
+                     <input
+                        type="text"
+                        name="shelterName"
+                        value={form.shelterName}
+                        onChange={handleChange}
+                        className={inputClass}
+                        placeholder="Happy Paws Shelter"
+                     />
+                  </Field>
+
+                  <Field
+                     label="Description"
+                     helper="Explain your mission, the animals you care for, or anything adopters should know."
+                  >
+                     <textarea
+                        name="description"
+                        value={form.description}
+                        onChange={handleChange}
+                        rows={6}
+                        className={`${inputClass} resize-none`}
+                        placeholder="Tell adopters about your shelter..."
+                     />
+                  </Field>
+               </div>
+            </FormSection>
+
+            <FormSection
+               title="Contact Details"
+               description="Help adopters know where and how to reach you."
+            >
+               <div className="grid gap-5 sm:grid-cols-2">
+                  <div className="sm:col-span-2">
+                     <Field label="Address">
+                        <input
+                           type="text"
+                           name="address"
+                           value={form.address}
+                           onChange={handleChange}
+                           className={inputClass}
+                           placeholder="Shelter address"
+                        />
+                     </Field>
+                  </div>
+
+                  <Field label="Phone">
+                     <input
+                        type="tel"
+                        name="phone"
+                        value={form.phone}
+                        onChange={handleChange}
+                        className={inputClass}
+                        placeholder="+91 98765 43210"
+                     />
+                  </Field>
+
+                  <Field
+                     label="Website"
+                     helper="Include https:// if you have a website."
+                  >
+                     <input
+                        type="url"
+                        name="website"
+                        value={form.website}
+                        onChange={handleChange}
+                        className={inputClass}
+                        placeholder="https://example.com"
+                     />
+                  </Field>
+               </div>
+            </FormSection>
+
+            <div className="flex flex-col-reverse gap-3 border-t pt-6 sm:flex-row sm:justify-end">
+               <Link
+                  href="/dashboard/shelter"
+                  className="rounded-xl border px-6 py-3 text-center font-medium transition hover:bg-gray-50"
+               >
+                  Cancel
+               </Link>
+
+               <button
+                  type="submit"
+                  disabled={saving}
+                  className="rounded-xl bg-black px-6 py-3 font-medium text-white transition hover:bg-gray-800 disabled:cursor-not-allowed disabled:opacity-50"
+               >
+                  {saving ? "Saving..." : "Save Profile"}
+               </button>
+            </div>
          </form>
       </main>
+   );
+}
+
+const inputClass =
+   "w-full rounded-xl border px-4 py-3 outline-none transition focus:border-black focus:ring-1 focus:ring-black";
+
+function FormSection({ title, description, children }) {
+   return (
+      <section className="rounded-2xl border bg-white p-6">
+         <div className="mb-6">
+            <h2 className="text-xl font-semibold">{title}</h2>
+
+            <p className="mt-1 text-sm text-gray-500">{description}</p>
+         </div>
+
+         {children}
+      </section>
+   );
+}
+
+function Field({ label, helper, children }) {
+   return (
+      <div>
+         <label className="mb-2 block text-sm font-medium">{label}</label>
+
+         {children}
+
+         {helper && <p className="mt-2 text-xs text-gray-500">{helper}</p>}
+      </div>
    );
 }
